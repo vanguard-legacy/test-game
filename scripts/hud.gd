@@ -1,6 +1,8 @@
 extends CanvasLayer
 class_name PrototypeHud
 
+const GameBalance := preload("res://scripts/game_balance.gd")
+
 signal build_tower_requested
 signal cancel_build_requested
 signal start_wave_requested
@@ -45,6 +47,7 @@ signal quit_requested
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_apply_styles()
+	build_tower_button.text = "G'wizard Tower (%d)" % GameBalance.TOWER_COST
 	build_tower_button.pressed.connect(_on_build_tower_button_pressed)
 	cancel_build_button.pressed.connect(_on_cancel_build_button_pressed)
 	start_wave_button.pressed.connect(_on_start_wave_button_pressed)

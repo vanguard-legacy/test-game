@@ -15,3 +15,4 @@ Track meaningful project changes here so future work has a clear history. Use sh
 - Verified project validation and a brief headless scene run with Godot 4.6.2.
 - Stabilized HUD panel sizing so build controls do not resize the UI when entering or leaving tower placement mode.
 - Added multiple enemy archetypes, selectable tower upgrades, and a start/pause/restart menu overlay.
+- Refactored balance data, wave definitions, and run progress out of `main.gd` into focused helper classes.

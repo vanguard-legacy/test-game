@@ -1,51 +1,7 @@
 extends Node3D
 
-const STARTING_LIVES: int = 10
-const STARTING_GOLD: int = 150
-const TOWER_COST: int = 50
-const BASE_ENEMIES_PER_WAVE: int = 4
-
-const ENEMY_TYPES: Array[Dictionary] = [
-	{
-		"name": "Gobbelin",
-		"health": 2.0,
-		"health_scale": 0.28,
-		"speed": 1.75,
-		"speed_scale": 0.05,
-		"gold": 10,
-		"score": 10,
-		"scale": 1.0,
-		"body_color": Color(0.30, 0.72, 0.25),
-		"ear_color": Color(0.19, 0.46, 0.18),
-		"hat_color": Color(0.20, 0.15, 0.12),
-	},
-	{
-		"name": "Gnuruk",
-		"health": 1.35,
-		"health_scale": 0.18,
-		"speed": 2.35,
-		"speed_scale": 0.07,
-		"gold": 8,
-		"score": 14,
-		"scale": 0.88,
-		"body_color": Color(0.28, 0.56, 0.66),
-		"ear_color": Color(0.18, 0.38, 0.48),
-		"hat_color": Color(0.12, 0.18, 0.23),
-	},
-	{
-		"name": "Gnogre",
-		"health": 5.2,
-		"health_scale": 0.55,
-		"speed": 1.05,
-		"speed_scale": 0.025,
-		"gold": 22,
-		"score": 35,
-		"scale": 1.45,
-		"body_color": Color(0.62, 0.36, 0.24),
-		"ear_color": Color(0.42, 0.23, 0.18),
-		"hat_color": Color(0.24, 0.16, 0.13),
-	},
-]
+const GameBalance := preload("res://scripts/game_balance.gd")
+const RunState := preload("res://scripts/run_state.gd")
 
 @export var enemy_scene: PackedScene
 @export var tower_scene: PackedScene
@@ -58,16 +14,7 @@ const ENEMY_TYPES: Array[Dictionary] = [
 
 var enemies: Array[PrototypeEnemy] = []
 var towers: Array[PrototypeTower] = []
-var spawn_cooldown: float = 0.0
-var enemies_to_spawn: int = 0
-var enemies_spawned_this_wave: int = 0
-var wave: int = 0
-var lives: int = STARTING_LIVES
-var gold: int = STARTING_GOLD
-var score: int = 0
-var game_over: bool = false
-var game_started: bool = false
-var wave_active: bool = false
+var run_state := RunState.new()
 var selected_tower: PrototypeTower
 
 
@@ -92,10 +39,10 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if game_over or not game_started or get_tree().paused:
+	if run_state.game_over or not run_state.game_started or get_tree().paused:
 		return
 
-	if wave_active:
+	if run_state.wave_active:
 		_spawn_wave_enemies(delta)
 		_check_wave_complete()
 
@@ -103,11 +50,14 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if game_over and event.is_action_pressed("ui_accept"):
+	if run_state.game_over and event.is_action_pressed("ui_accept"):
 		_restart_game()
 		return
 
 	if event.is_action_pressed("ui_cancel"):
+		if tower_placement.is_active:
+			return
+
 		_open_pause_menu()
 		return
 
@@ -121,36 +71,32 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _start_next_wave() -> void:
-	if wave_active:
+	if run_state.wave_active:
 		return
 
-	wave += 1
-	enemies_to_spawn = BASE_ENEMIES_PER_WAVE + wave
-	enemies_spawned_this_wave = 0
-	spawn_cooldown = 0.2
-	wave_active = true
+	var next_wave: int = run_state.wave + 1
+	var wave_definition: Dictionary = GameBalance.get_wave_definition(next_wave)
+	run_state.start_wave(wave_definition)
 	tower_placement.cancel_placement()
-	hud.set_message("Wave %d: the gobbelins approach." % wave)
+	hud.set_message(str(wave_definition.get("title", "Wave %d begins." % run_state.wave)))
 
 
 func _spawn_wave_enemies(delta: float) -> void:
-	if enemies_to_spawn <= 0:
+	if not run_state.has_pending_spawns():
 		return
 
-	spawn_cooldown -= delta
-	if spawn_cooldown > 0.0:
+	run_state.spawn_cooldown -= delta
+	if run_state.spawn_cooldown > 0.0:
 		return
 
-	_spawn_enemy()
-	enemies_to_spawn -= 1
-	enemies_spawned_this_wave += 1
-	spawn_cooldown = max(0.35, 1.0 - float(wave) * 0.05)
+	_spawn_enemy(run_state.next_enemy_id())
+	run_state.spawn_cooldown = run_state.spawn_delay
 
 
-func _spawn_enemy() -> void:
+func _spawn_enemy(enemy_id: String) -> void:
 	var enemy := enemy_scene.instantiate() as PrototypeEnemy
 	enemy_container.add_child(enemy)
-	enemy.setup(level_map.get_enemy_path(), wave, _choose_enemy_type())
+	enemy.setup(level_map.get_enemy_path(), run_state.wave, GameBalance.get_enemy_config(enemy_id))
 	enemy.reached_exit.connect(_on_enemy_reached_exit)
 	enemy.defeated.connect(_on_enemy_defeated)
 	enemies.append(enemy)
@@ -159,33 +105,33 @@ func _spawn_enemy() -> void:
 func _on_enemy_reached_exit(enemy: PrototypeEnemy) -> void:
 	enemies.erase(enemy)
 	enemy.queue_free()
-	lives -= 1
+	run_state.lives -= 1
 	hud.set_message("An enemy reached the exit.")
 
-	if lives <= 0:
+	if run_state.lives <= 0:
 		_game_over()
 
 
 func _on_enemy_defeated(enemy: PrototypeEnemy) -> void:
 	enemies.erase(enemy)
 	enemy.queue_free()
-	score += enemy.score_reward
-	gold += enemy.gold_reward
+	run_state.score += enemy.score_reward
+	run_state.gold += enemy.gold_reward
 
 
 func _check_wave_complete() -> void:
-	if enemies_to_spawn > 0 or not enemies.is_empty():
+	if run_state.has_pending_spawns() or not enemies.is_empty():
 		return
 
-	wave_active = false
+	run_state.wave_active = false
 	hud.set_message("Wave clear. Build more or start the next wave.")
 
 
 func _on_build_tower_requested() -> void:
-	if game_over or not game_started:
+	if run_state.game_over or not run_state.game_started:
 		return
 
-	if gold < TOWER_COST:
+	if run_state.gold < GameBalance.TOWER_COST:
 		hud.set_message("Not enough gold for another G'wizard tower.")
 		return
 
@@ -198,7 +144,7 @@ func _on_cancel_build_requested() -> void:
 
 
 func _on_start_wave_requested() -> void:
-	if game_over or wave_active or not game_started:
+	if run_state.game_over or run_state.wave_active or not run_state.game_started:
 		return
 
 	if towers.is_empty():
@@ -209,7 +155,7 @@ func _on_start_wave_requested() -> void:
 
 
 func _on_tower_placement_confirmed(position: Vector3) -> void:
-	if gold < TOWER_COST:
+	if run_state.gold < GameBalance.TOWER_COST:
 		hud.set_message("Not enough gold for another G'wizard tower.")
 		tower_placement.cancel_placement()
 		return
@@ -219,7 +165,7 @@ func _on_tower_placement_confirmed(position: Vector3) -> void:
 	tower.global_position = position
 	tower.set_targets(enemies)
 	towers.append(tower)
-	gold -= TOWER_COST
+	run_state.gold -= GameBalance.TOWER_COST
 	tower_placement.cancel_placement()
 	_select_tower(tower)
 	hud.set_message("Tower placed. Build more or start the wave.")
@@ -227,7 +173,7 @@ func _on_tower_placement_confirmed(position: Vector3) -> void:
 
 
 func _on_tower_placement_cancelled() -> void:
-	if not game_over:
+	if not run_state.game_over:
 		hud.set_message("Build cancelled.")
 
 
@@ -249,11 +195,11 @@ func _on_upgrade_tower_requested() -> void:
 		hud.set_message("That tower is already fully upgraded.")
 		return
 
-	if gold < upgrade_cost:
+	if run_state.gold < upgrade_cost:
 		hud.set_message("Not enough gold for that upgrade.")
 		return
 
-	gold -= upgrade_cost
+	run_state.gold -= upgrade_cost
 	selected_tower.upgrade()
 	hud.set_message("%s upgraded." % selected_tower.get_display_name())
 	_update_ui()
@@ -270,14 +216,14 @@ func _on_resume_requested() -> void:
 
 func _on_new_game_requested() -> void:
 	get_tree().paused = false
-	game_started = true
+	run_state.game_started = true
 	_restart_game()
 	hud.hide_menu()
 
 
 func _on_restart_requested() -> void:
 	get_tree().paused = false
-	game_started = true
+	run_state.game_started = true
 	_restart_game()
 	hud.hide_menu()
 
@@ -287,8 +233,8 @@ func _on_quit_requested() -> void:
 
 
 func _game_over() -> void:
-	game_over = true
-	wave_active = false
+	run_state.game_over = true
+	run_state.wave_active = false
 	tower_placement.cancel_placement()
 	hud.set_message("Defeat. Press Enter or Space to try again.")
 	hud.show_main_menu("Defeat", false)
@@ -305,26 +251,17 @@ func _restart_game() -> void:
 	enemies.clear()
 	towers.clear()
 	selected_tower = null
-	spawn_cooldown = 0.0
-	enemies_to_spawn = 0
-	enemies_spawned_this_wave = 0
-	wave = 0
-	lives = STARTING_LIVES
-	gold = STARTING_GOLD
-	score = 0
-	game_over = false
-	wave_active = false
+	run_state.reset(run_state.game_started)
 	hud.set_message("Build a tower, then start the wave.")
 	hud.hide_menu()
 	_update_ui()
 
 
 func _update_ui() -> void:
-	var incoming := enemies.size() + enemies_to_spawn
-	hud.update_stats(wave, lives, score, gold, incoming, towers.size())
-	hud.set_build_enabled(game_started and not game_over and gold >= TOWER_COST)
-	hud.set_start_wave_enabled(game_started and not game_over and not wave_active and not towers.is_empty())
-	hud.update_selected_tower(selected_tower, gold)
+	hud.update_stats(run_state.wave, run_state.lives, run_state.score, run_state.gold, run_state.incoming_count(enemies.size()), towers.size())
+	hud.set_build_enabled(run_state.game_started and not run_state.game_over and run_state.gold >= GameBalance.TOWER_COST)
+	hud.set_start_wave_enabled(run_state.game_started and not run_state.game_over and not run_state.wave_active and not towers.is_empty())
+	hud.update_selected_tower(selected_tower, run_state.gold)
 
 
 func _get_tower_positions() -> Array[Vector3]:
@@ -335,19 +272,9 @@ func _get_tower_positions() -> Array[Vector3]:
 	return positions
 
 
-func _choose_enemy_type() -> Dictionary:
-	if wave >= 5 and enemies_spawned_this_wave % 5 == 4:
-		return ENEMY_TYPES[2]
-
-	if wave >= 3 and enemies_spawned_this_wave % 3 == 2:
-		return ENEMY_TYPES[1]
-
-	return ENEMY_TYPES[0]
-
-
 func _select_tower(tower: PrototypeTower) -> void:
 	selected_tower = tower
-	hud.update_selected_tower(selected_tower, gold)
+	hud.update_selected_tower(selected_tower, run_state.gold)
 
 
 func _find_tower_at_mouse() -> PrototypeTower:
@@ -371,7 +298,7 @@ func _find_tower_at_mouse() -> PrototypeTower:
 
 
 func _open_pause_menu() -> void:
-	if not game_started or game_over:
+	if not run_state.game_started or run_state.game_over:
 		return
 
 	get_tree().paused = true

@@ -1,17 +1,14 @@
 extends Node3D
 class_name PrototypeTower
 
-const RANGE: float = 5.5
-const DAMAGE: float = 1.0
-const FIRE_RATE: float = 0.45
-const MAX_LEVEL: int = 3
+const GameBalance := preload("res://scripts/game_balance.gd")
 
 var targets: Array[PrototypeEnemy] = []
 var cooldown: float = 0.0
 var level: int = 1
-var range: float = RANGE
-var damage: float = DAMAGE
-var fire_rate: float = FIRE_RATE
+var range: float = GameBalance.TOWER_BASE_RANGE
+var damage: float = GameBalance.TOWER_BASE_DAMAGE
+var fire_rate: float = GameBalance.TOWER_BASE_FIRE_RATE
 
 @onready var focus_crystal: MeshInstance3D = $FocusCrystal
 @onready var tower_range: MeshInstance3D = $TowerRange
@@ -52,14 +49,14 @@ func _find_target() -> PrototypeEnemy:
 
 
 func can_upgrade() -> bool:
-	return level < MAX_LEVEL
+	return level < GameBalance.TOWER_MAX_LEVEL
 
 
 func get_upgrade_cost() -> int:
 	if not can_upgrade():
 		return 0
 
-	return 60 + (level - 1) * 45
+	return GameBalance.get_tower_upgrade_cost(level)
 
 
 func upgrade() -> void:
@@ -67,9 +64,9 @@ func upgrade() -> void:
 		return
 
 	level += 1
-	damage += 0.75
-	range += 0.75
-	fire_rate = max(0.22, fire_rate - 0.07)
+	damage += GameBalance.TOWER_DAMAGE_STEP
+	range += GameBalance.TOWER_RANGE_STEP
+	fire_rate = maxf(GameBalance.TOWER_MIN_FIRE_RATE, fire_rate - GameBalance.TOWER_FIRE_RATE_STEP)
 	_update_upgrade_visuals()
 
 

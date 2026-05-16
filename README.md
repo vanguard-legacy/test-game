@@ -16,7 +16,7 @@ Open the project in Godot and run the main scene. The first prototype is intenti
 - A game menu for starting, pausing, restarting, and quitting.
 - Lives, gold, score, waves, and a restart prompt after defeat.
 
-Build towers from the left UI panel, click a green patch of terrain to place them, then press Start Wave when the defense is ready.
+Build towers from the HUD build panel, click a green patch of terrain to place them, then press Start Wave when the defense is ready.
 
 The prototype is split into small Godot scenes:
 
@@ -27,7 +27,7 @@ The prototype is split into small Godot scenes:
 - `scenes/hud.tscn` owns the container-based HUD and build/start-wave UI.
 - `assets/ui/icons/` contains the first generated UI icons.
 
-UI styling lives in `scripts/ui_theme.gd`; shared 3D material helpers live in `scripts/materials.gd`.
+Game balance and wave definitions live in `scripts/game_balance.gd`; run progress lives in `scripts/run_state.gd`. UI styling lives in `scripts/ui_theme.gd`; shared 3D material helpers live in `scripts/materials.gd`.
 
 ## Development
 

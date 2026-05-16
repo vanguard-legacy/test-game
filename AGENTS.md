@@ -31,6 +31,8 @@
 - Put scenes under `res://scenes/` when the project grows beyond a prototype.
 - Put temporary validation or test scenes under `res://tests/`.
 - Keep exported variables designer-friendly with clear names and sensible defaults.
+- Keep enemy, tower, wave, and economy numbers centralized in `scripts/game_balance.gd`.
+- Keep run progress/state in `scripts/run_state.gd` rather than scattering counters through scene scripts.
 
 ## Validation
 

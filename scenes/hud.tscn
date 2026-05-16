@@ -161,7 +161,7 @@ text = "Build"
 [node name="BuildTowerButton" type="Button" parent="Root/Layout/BottomRow/BuildPanel/Margin/Stack"]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
-text = "G'wizard Tower (50)"
+text = "G'wizard Tower"
 icon = ExtResource("2_tower")
 
 [node name="CancelBuildButton" type="Button" parent="Root/Layout/BottomRow/BuildPanel/Margin/Stack"]
