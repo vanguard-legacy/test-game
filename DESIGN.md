@@ -91,3 +91,11 @@ Stylized realism inspired by games such as The Sims, Valheim, and Subnautica:
 6. A simple score value.
 
 The prototype should prove that height, width, and 3D placement are worth building the rest of the game around.
+
+## Current Prototype Direction
+
+- Procedural terrain should keep moving toward smooth, readable height changes rather than blocky test geometry.
+- Enemy navigation should be map-driven where possible, with enemies asking the level for a path to the exit.
+- The HUD should remain container-based and responsive so panels do not overlap as stats, buttons, and messages grow.
+- Scene assets should own visuals; scripts should focus on behavior.
+- `CHANGELOG.md` should be updated whenever prototype direction, systems, assets, or validation expectations meaningfully change.

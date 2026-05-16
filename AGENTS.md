@@ -8,6 +8,7 @@
 - Version control plugin: Godot Git plugin is enabled
 - Game concept: 3D high-fantasy medieval tower defense where terrain height, path width, seasons, weather, towers, and enemy variety drive strategy.
 - Design source of truth: `DESIGN.md`
+- Change history: `CHANGELOG.md`
 - Current project is intentionally small; preserve that simplicity unless the task asks for structure.
 
 ## Godot Development Rules
@@ -50,6 +51,8 @@
 ## Codex Workflow
 
 - Read `DESIGN.md` before making gameplay, UI, art-direction, level, enemy, tower, score, or progression changes.
+- Keep `CHANGELOG.md` current when making meaningful gameplay, architecture, asset, UI, validation, or documentation changes.
+- Changelog entries should be dated, concise, and written for future developers rather than as a transcript of the chat.
 - Inspect the relevant scenes, scripts, resources, and `project.godot` before editing.
 - Keep changes tightly scoped to the requested behavior.
 - For visual or game-feel work, prefer small iterative changes that are easy to tune in the editor.

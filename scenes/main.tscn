@@ -1,6 +1,24 @@
-[gd_scene load_steps=2 format=3 uid="uid://d2sjww1h5n1b5"]
+[gd_scene load_steps=7 format=3 uid="uid://d2sjww1h5n1b5"]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/enemy.tscn" id="2_enemy"]
+[ext_resource type="PackedScene" path="res://scenes/level_map.tscn" id="3_map"]
+[ext_resource type="PackedScene" path="res://scenes/tower.tscn" id="4_tower"]
+[ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="5_hud"]
+[ext_resource type="Script" path="res://scripts/tower_placement.gd" id="6_place"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
+enemy_scene = ExtResource("2_enemy")
+tower_scene = ExtResource("4_tower")
+
+[node name="LevelMap" parent="." instance=ExtResource("3_map")]
+
+[node name="Enemies" type="Node3D" parent="."]
+
+[node name="Towers" type="Node3D" parent="."]
+
+[node name="TowerPlacement" type="Node3D" parent="."]
+script = ExtResource("6_place")
+
+[node name="Hud" parent="." instance=ExtResource("5_hud")]

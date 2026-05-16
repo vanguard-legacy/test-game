@@ -1,0 +1,194 @@
+[gd_scene load_steps=5 format=3 uid="uid://bw2ougbjr4g31"]
+
+[ext_resource type="Script" path="res://scripts/hud.gd" id="1_hud"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/tower.svg" id="2_tower"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/cancel.svg" id="3_cancel"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/wave.svg" id="4_wave"]
+
+[node name="Hud" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Layout" type="VBoxContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="TopBar" type="PanelContainer" parent="Root/Layout"]
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="Root/Layout/TopBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="StatsRow" type="HBoxContainer" parent="Root/Layout/TopBar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow"]
+custom_minimum_size = Vector2(190, 0)
+layout_mode = 2
+text = "G'wizard Defense"
+vertical_alignment = 1
+
+[node name="WaveStat" type="VBoxContainer" parent="Root/Layout/TopBar/Margin/StatsRow"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/WaveStat"]
+layout_mode = 2
+text = "Wave"
+
+[node name="Value" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/WaveStat"]
+layout_mode = 2
+text = "0"
+
+[node name="LivesStat" type="VBoxContainer" parent="Root/Layout/TopBar/Margin/StatsRow"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/LivesStat"]
+layout_mode = 2
+text = "Lives"
+
+[node name="Value" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/LivesStat"]
+layout_mode = 2
+text = "10"
+
+[node name="GoldStat" type="VBoxContainer" parent="Root/Layout/TopBar/Margin/StatsRow"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/GoldStat"]
+layout_mode = 2
+text = "Gold"
+
+[node name="Value" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/GoldStat"]
+layout_mode = 2
+text = "150"
+
+[node name="ScoreStat" type="VBoxContainer" parent="Root/Layout/TopBar/Margin/StatsRow"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/ScoreStat"]
+layout_mode = 2
+text = "Score"
+
+[node name="Value" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/ScoreStat"]
+layout_mode = 2
+text = "0"
+
+[node name="TowersStat" type="VBoxContainer" parent="Root/Layout/TopBar/Margin/StatsRow"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/TowersStat"]
+layout_mode = 2
+text = "Towers"
+
+[node name="Value" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/TowersStat"]
+layout_mode = 2
+text = "0"
+
+[node name="IncomingStat" type="VBoxContainer" parent="Root/Layout/TopBar/Margin/StatsRow"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/IncomingStat"]
+layout_mode = 2
+text = "Incoming"
+
+[node name="Value" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/IncomingStat"]
+layout_mode = 2
+text = "0"
+
+[node name="Spacer" type="Control" parent="Root/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="BottomRow" type="HBoxContainer" parent="Root/Layout"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="BuildPanel" type="PanelContainer" parent="Root/Layout/BottomRow"]
+custom_minimum_size = Vector2(310, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="Root/Layout/BottomRow/BuildPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="Stack" type="VBoxContainer" parent="Root/Layout/BottomRow/BuildPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BuildTitle" type="Label" parent="Root/Layout/BottomRow/BuildPanel/Margin/Stack"]
+layout_mode = 2
+text = "Build"
+
+[node name="BuildTowerButton" type="Button" parent="Root/Layout/BottomRow/BuildPanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "G'wizard Tower (50)"
+icon = ExtResource("2_tower")
+
+[node name="CancelBuildButton" type="Button" parent="Root/Layout/BottomRow/BuildPanel/Margin/Stack"]
+visible = false
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Cancel Build"
+icon = ExtResource("3_cancel")
+
+[node name="StartWaveButton" type="Button" parent="Root/Layout/BottomRow/BuildPanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Start Wave"
+icon = ExtResource("4_wave")
+
+[node name="MessagePanel" type="PanelContainer" parent="Root/Layout/BottomRow"]
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="Root/Layout/BottomRow/MessagePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="Stack" type="VBoxContainer" parent="Root/Layout/BottomRow/MessagePanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MessageTitle" type="Label" parent="Root/Layout/BottomRow/MessagePanel/Margin/Stack"]
+layout_mode = 2
+text = "Command"
+
+[node name="MessageLabel" type="Label" parent="Root/Layout/BottomRow/MessagePanel/Margin/Stack"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Build a tower, then start the wave."
+autowrap_mode = 3

@@ -50,7 +50,7 @@ Write-Host "Validating project: $ProjectRoot"
 & $Godot --headless --path $ProjectRoot --quit
 $ExitCode = $LASTEXITCODE
 
-if ($ExitCode -ne 0) {
+if ($null -ne $ExitCode -and $ExitCode -ne 0) {
     throw "Godot validation failed with exit code $ExitCode"
 }
 

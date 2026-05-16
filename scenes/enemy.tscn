@@ -1,0 +1,87 @@
+[gd_scene load_steps=12 format=3 uid="uid://cq4ld8oxd8f7b"]
+
+[ext_resource type="Script" path="res://scripts/enemy.gd" id="1_enemy"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_skin"]
+albedo_color = Color(0.32, 0.72, 0.29, 1)
+roughness = 0.76
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dark_skin"]
+albedo_color = Color(0.19, 0.46, 0.18, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cloth"]
+albedo_color = Color(0.25, 0.18, 0.14, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+albedo_color = Color(0.04, 0.035, 0.025, 1)
+roughness = 0.5
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_body"]
+radius = 0.24
+height = 0.82
+
+[sub_resource type="SphereMesh" id="SphereMesh_head"]
+radius = 0.24
+height = 0.42
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_hat"]
+top_radius = 0.04
+bottom_radius = 0.25
+height = 0.34
+
+[sub_resource type="SphereMesh" id="SphereMesh_eye"]
+radius = 0.035
+height = 0.07
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_nose"]
+top_radius = 0.0
+bottom_radius = 0.04
+height = 0.16
+
+[sub_resource type="SphereMesh" id="SphereMesh_ear"]
+radius = 0.07
+height = 0.12
+
+[node name="Gobbelin" type="Node3D"]
+script = ExtResource("1_enemy")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh_body")
+material_override = SubResource("StandardMaterial3D_skin")
+
+[node name="Head" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.82, 0, 0, 0, 1, 0, 0.48, 0)
+mesh = SubResource("SphereMesh_head")
+material_override = SubResource("StandardMaterial3D_skin")
+
+[node name="Hat" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.78, 0)
+mesh = SubResource("CylinderMesh_hat")
+material_override = SubResource("StandardMaterial3D_cloth")
+
+[node name="LeftEye" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.08, 0.52, -0.2)
+mesh = SubResource("SphereMesh_eye")
+material_override = SubResource("StandardMaterial3D_eye")
+
+[node name="RightEye" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.08, 0.52, -0.2)
+mesh = SubResource("SphereMesh_eye")
+material_override = SubResource("StandardMaterial3D_eye")
+
+[node name="Nose" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0.48, -0.27)
+mesh = SubResource("CylinderMesh_nose")
+material_override = SubResource("StandardMaterial3D_dark_skin")
+
+[node name="LeftEar" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.55, 0, 0, 0, 0.82, 0, 0, 0, 1, -0.25, 0.5, 0)
+mesh = SubResource("SphereMesh_ear")
+material_override = SubResource("StandardMaterial3D_dark_skin")
+
+[node name="RightEar" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.55, 0, 0, 0, 0.82, 0, 0, 0, 1, 0.25, 0.5, 0)
+mesh = SubResource("SphereMesh_ear")
+material_override = SubResource("StandardMaterial3D_dark_skin")
