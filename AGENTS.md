@@ -6,6 +6,8 @@
 - Engine target: Godot 4.6 features, Forward Plus renderer
 - Physics: Jolt Physics for 3D
 - Version control plugin: Godot Git plugin is enabled
+- Game concept: 3D high-fantasy medieval tower defense where terrain height, path width, seasons, weather, towers, and enemy variety drive strategy.
+- Design source of truth: `DESIGN.md`
 - Current project is intentionally small; preserve that simplicity unless the task asks for structure.
 
 ## Godot Development Rules
@@ -15,6 +17,7 @@
 - Prefer statically typed GDScript: typed variables, typed arrays where useful, typed parameters, and return types.
 - Keep scripts scene-local until logic is clearly shared by multiple scenes.
 - Use signals for decoupled gameplay events.
+- Favor data-driven level, wave, enemy, tower, season, and weather definitions when those systems emerge.
 - Preserve existing scene and node names unless the task requires a rename.
 - Do not rename input actions, exported variables, resources, or scenes without explaining why.
 - Avoid hand-editing `.tscn`, `.tres`, `.godot`, and `.import` files unless necessary for the requested change.
@@ -46,6 +49,7 @@
 
 ## Codex Workflow
 
+- Read `DESIGN.md` before making gameplay, UI, art-direction, level, enemy, tower, score, or progression changes.
 - Inspect the relevant scenes, scripts, resources, and `project.godot` before editing.
 - Keep changes tightly scoped to the requested behavior.
 - For visual or game-feel work, prefer small iterative changes that are easy to tune in the editor.
