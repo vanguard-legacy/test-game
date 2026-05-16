@@ -11,7 +11,9 @@ Open the project in Godot and run the main scene. The first prototype is intenti
 - A generated 3D terrain map with low ground, high ground, and a wider exit road.
 - A procedural ramped road that climbs over the terrain and descends toward the exit.
 - Player-placed G'wizard towers.
-- Gobbelins that ask the map for an auto-generated route to the exit.
+- Multiple enemy types that ask the map for an auto-generated route to the exit.
+- Selectable towers with upgrades for stronger damage, range, and fire rate.
+- A game menu for starting, pausing, restarting, and quitting.
 - Lives, gold, score, waves, and a restart prompt after defeat.
 
 Build towers from the left UI panel, click a green patch of terrain to place them, then press Start Wave when the defense is ready.

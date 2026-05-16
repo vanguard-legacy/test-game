@@ -8,9 +8,18 @@ const BASE_SPEED: float = 1.75
 
 var path_points: Array[Vector3] = []
 var target_index: int = 1
+var enemy_type_name: String = "Gobbelin"
 var health: float = 2.0
 var speed: float = BASE_SPEED
+var gold_reward: int = 10
+var score_reward: int = 10
 var is_finished: bool = false
+
+@onready var body: MeshInstance3D = $Body
+@onready var head: MeshInstance3D = $Head
+@onready var hat: MeshInstance3D = $Hat
+@onready var left_ear: MeshInstance3D = $LeftEar
+@onready var right_ear: MeshInstance3D = $RightEar
 
 
 func _process(delta: float) -> void:
@@ -32,12 +41,16 @@ func _process(delta: float) -> void:
 		global_position += to_target.normalized() * step
 
 
-func setup(points: Array[Vector3], wave: int) -> void:
+func setup(points: Array[Vector3], wave: int, enemy_config: Dictionary) -> void:
 	path_points = points
 	target_index = 1
-	health = 2.0 + float(wave) * 0.35
-	speed = BASE_SPEED + float(wave) * 0.08
+	enemy_type_name = str(enemy_config.get("name", "Gobbelin"))
+	health = float(enemy_config.get("health", 2.0)) + float(wave) * float(enemy_config.get("health_scale", 0.25))
+	speed = float(enemy_config.get("speed", BASE_SPEED)) + float(wave) * float(enemy_config.get("speed_scale", 0.04))
+	gold_reward = int(enemy_config.get("gold", 10))
+	score_reward = int(enemy_config.get("score", 10))
 	global_position = path_points[0]
+	_apply_enemy_visuals(enemy_config)
 
 
 func take_damage(amount: float) -> void:
@@ -48,3 +61,13 @@ func take_damage(amount: float) -> void:
 	if health <= 0.0:
 		is_finished = true
 		defeated.emit(self)
+
+
+func _apply_enemy_visuals(enemy_config: Dictionary) -> void:
+	name = enemy_type_name
+	scale = Vector3.ONE * float(enemy_config.get("scale", 1.0))
+	body.material_override = PrototypeMaterials.standard(enemy_config.get("body_color", Color(0.30, 0.72, 0.25)))
+	head.material_override = body.material_override
+	hat.material_override = PrototypeMaterials.standard(enemy_config.get("hat_color", Color(0.20, 0.15, 0.12)))
+	left_ear.material_override = PrototypeMaterials.standard(enemy_config.get("ear_color", Color(0.19, 0.46, 0.18)))
+	right_ear.material_override = left_ear.material_override
