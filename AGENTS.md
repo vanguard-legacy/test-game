@@ -16,6 +16,7 @@
 - Prefer Godot 4.x patterns and APIs.
 - Use GDScript unless the user explicitly requests C# or GDExtension.
 - Prefer statically typed GDScript: typed variables, typed arrays where useful, typed parameters, and return types.
+- Prefer typed `RefCounted` payloads for cross-script data such as definitions, view models, and query results; keep raw dictionaries isolated to compact balance authoring or file/resource parsing.
 - Keep scripts scene-local until logic is clearly shared by multiple scenes.
 - Use signals for decoupled gameplay events.
 - Favor data-driven level, wave, enemy, tower, season, and weather definitions when those systems emerge.
@@ -31,6 +32,7 @@
 - Put scenes under `res://scenes/` when the project grows beyond a prototype.
 - Put temporary validation or test scenes under `res://tests/`.
 - Keep exported variables designer-friendly with clear names and sensible defaults.
+- Keep coordinator scripts thin. If a call starts collecting many parameters, introduce a small typed model or move the ownership to the script that already owns that state.
 - Keep enemy, tower, wave, and economy numbers centralized in `scripts/game_balance.gd`.
 - Keep run progress/state in `scripts/run_state.gd` rather than scattering counters through scene scripts.
 

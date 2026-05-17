@@ -27,3 +27,7 @@ Track meaningful project changes here so future work has a clear history. Use sh
 - Fixed reward choice selection so exhausted or even-sized reward pools cannot hang the game.
 - Changed middle-mouse camera panning to anchor on the terrain point under the cursor instead of using fixed pixel-speed movement.
 - Locked middle-mouse camera panning to a horizontal grab plane so terrain height changes do not cause accidental zoom-like motion.
+- Refactored gameplay, HUD, reward, terrain, and placement data flow around typed definitions, view models, and query results instead of long parameter lists and scattered dictionaries.
+- Added onboarding comments to core prototype scripts and documented the current architecture boundaries for future contributors and agents.
+- Changed the command message panel into a stable scrollable event log so players can review run messages.
+- Prevented camera mouse controls from responding while the cursor is over HUD controls, including the command log scrollbar.

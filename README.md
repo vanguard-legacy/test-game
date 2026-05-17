@@ -17,6 +17,7 @@ Open the project in Godot and run the main scene. The first prototype is intenti
 - XP reward choices that offer one of three run upgrades, including tower unlocks and global tower buffs.
 - Selectable towers with gold upgrades for stronger damage, range, and fire rate.
 - A game menu for starting, pausing, restarting, and quitting.
+- A scrollable command log that keeps the run's event history visible.
 - Lives, gold, score, waves, and a restart prompt after defeat.
 
 Build towers from the HUD build panel, click a green patch of terrain to place them, then press Start Wave when the defense is ready.
@@ -31,12 +32,16 @@ The prototype is split into small Godot scenes:
 - `scenes/hud.tscn` owns the container-based HUD and build/start-wave UI.
 - `assets/ui/icons/` contains the first generated UI icons.
 
-Game balance, tower definitions, reward choices, and wave definitions live in `scripts/game_balance.gd`; run progress lives in `scripts/run_state.gd`. Camera behavior lives in `scripts/camera_controller.gd`. UI styling lives in `scripts/ui_theme.gd`; shared 3D material helpers live in `scripts/materials.gd`.
+Game balance lives in `scripts/game_balance.gd`, but gameplay scripts consume typed definitions from `scripts/tower_definition.gd`, `scripts/enemy_definition.gd`, `scripts/wave_definition.gd`, and `scripts/reward_definition.gd`. Run progress lives in `scripts/run_state.gd`; HUD updates flow through `scripts/hud_view_model.gd`; terrain/build queries use small typed result objects instead of ad hoc dictionaries.
+
+Camera behavior lives in `scripts/camera_controller.gd`. UI styling lives in `scripts/ui_theme.gd`; shared 3D material helpers live in `scripts/materials.gd`.
 
 ## Development
 
 Codex project guidance lives in `AGENTS.md`.
 Meaningful changes should be recorded in `CHANGELOG.md`.
+
+Architecture rule of thumb: keep `main.gd` as the scene coordinator, keep balance numbers in `game_balance.gd`, keep mutable run values in `run_state.gd`, and prefer typed payload objects over long parameter lists or cross-script dictionaries.
 
 Run a basic Godot project validation with:
 

@@ -1,6 +1,15 @@
 class_name PrototypeGameBalance
 extends RefCounted
 
+const TowerDefinition := preload("res://scripts/tower_definition.gd")
+const EnemyDefinition := preload("res://scripts/enemy_definition.gd")
+const RewardDefinition := preload("res://scripts/reward_definition.gd")
+const WaveDefinition := preload("res://scripts/wave_definition.gd")
+const TowerModifiers := preload("res://scripts/tower_modifiers.gd")
+
+# Central prototype balance catalogue. Keep numbers here, convert them into
+# typed definitions here, and keep gameplay scripts free of dictionary keys.
+
 const STARTING_LIVES: int = 10
 const STARTING_GOLD: int = 150
 const TOWER_COST: int = 50
@@ -36,18 +45,14 @@ static func get_starting_tower_ids() -> Array[String]:
 	return [TOWER_GWIZARD]
 
 
-static func get_default_tower_modifiers() -> Dictionary:
-	return {
-		"damage_multiplier": 1.0,
-		"range_bonus": 0.0,
-		"fire_rate_multiplier": 1.0,
-	}
+static func get_default_tower_modifiers() -> TowerModifiers:
+	return TowerModifiers.new()
 
 
-static func get_tower_config(tower_id: String) -> Dictionary:
+static func get_tower_definition(tower_id: String) -> TowerDefinition:
 	match tower_id:
 		TOWER_LONGBOW:
-			return {
+			return TowerDefinition.new({
 				"id": TOWER_LONGBOW,
 				"name": "Longbow Keep",
 				"short_name": "Longbow",
@@ -61,9 +66,9 @@ static func get_tower_config(tower_id: String) -> Dictionary:
 				"roof_color": Color(0.34, 0.20, 0.10),
 				"banner_color": Color(0.78, 0.48, 0.22),
 				"crystal_color": Color(1.0, 0.78, 0.28),
-			}
+			})
 		TOWER_FROST:
-			return {
+			return TowerDefinition.new({
 				"id": TOWER_FROST,
 				"name": "Frost Spire",
 				"short_name": "Frost",
@@ -79,9 +84,9 @@ static func get_tower_config(tower_id: String) -> Dictionary:
 				"roof_color": Color(0.13, 0.32, 0.48),
 				"banner_color": Color(0.52, 0.82, 0.96),
 				"crystal_color": Color(0.54, 0.92, 1.0),
-			}
+			})
 		TOWER_MORTAR:
-			return {
+			return TowerDefinition.new({
 				"id": TOWER_MORTAR,
 				"name": "Rune Mortar",
 				"short_name": "Mortar",
@@ -96,9 +101,9 @@ static func get_tower_config(tower_id: String) -> Dictionary:
 				"roof_color": Color(0.46, 0.13, 0.08),
 				"banner_color": Color(0.90, 0.35, 0.18),
 				"crystal_color": Color(1.0, 0.34, 0.18),
-			}
+			})
 		_:
-			return {
+			return TowerDefinition.new({
 				"id": TOWER_GWIZARD,
 				"name": "G'wizard Tower",
 				"short_name": "G'wizard",
@@ -112,35 +117,35 @@ static func get_tower_config(tower_id: String) -> Dictionary:
 				"roof_color": Color(0.35, 0.13, 0.45),
 				"banner_color": Color(0.88, 0.72, 0.28),
 				"crystal_color": Color(0.38, 0.86, 1.0),
-			}
+			})
 
 
 static func get_tower_cost(tower_id: String) -> int:
-	return int(get_tower_config(tower_id).get("cost", TOWER_COST))
+	return get_tower_definition(tower_id).cost
 
 
 static func get_xp_required_for_level(level: int) -> int:
 	return 42 + max(0, level - 1) * 28
 
 
-static func get_reward_choices(owned_tower_ids: Array[String], chosen_reward_ids: Array[String], reward_level: int) -> Array[Dictionary]:
-	var candidates: Array[Dictionary] = []
+static func get_reward_choices(owned_tower_ids: Array[String], chosen_reward_ids: Array[String], reward_level: int) -> Array[RewardDefinition]:
+	var candidates: Array[RewardDefinition] = []
 	if owned_tower_ids.size() < MAX_TOWER_LOADOUT:
 		for tower_id in [TOWER_LONGBOW, TOWER_FROST, TOWER_MORTAR]:
 			if not owned_tower_ids.has(tower_id):
 				candidates.append(_make_unlock_reward(tower_id))
 
 	for reward in _get_upgrade_rewards():
-		if not chosen_reward_ids.has(str(reward.get("id", ""))):
-			candidates.append(reward.duplicate(true))
+		if not chosen_reward_ids.has(reward.id):
+			candidates.append(reward)
 
 	return _pick_reward_choices(candidates, reward_level)
 
 
-static func get_enemy_config(enemy_id: String) -> Dictionary:
+static func get_enemy_definition(enemy_id: String) -> EnemyDefinition:
 	match enemy_id:
 		ENEMY_GNURUK:
-			return {
+			return EnemyDefinition.new({
 				"id": ENEMY_GNURUK,
 				"name": "Gnuruk",
 				"health": 1.35,
@@ -154,9 +159,9 @@ static func get_enemy_config(enemy_id: String) -> Dictionary:
 				"body_color": Color(0.28, 0.56, 0.66),
 				"ear_color": Color(0.18, 0.38, 0.48),
 				"hat_color": Color(0.12, 0.18, 0.23),
-			}
+			})
 		ENEMY_GNOGRE:
-			return {
+			return EnemyDefinition.new({
 				"id": ENEMY_GNOGRE,
 				"name": "Gnogre",
 				"health": 5.2,
@@ -170,9 +175,9 @@ static func get_enemy_config(enemy_id: String) -> Dictionary:
 				"body_color": Color(0.62, 0.36, 0.24),
 				"ear_color": Color(0.42, 0.23, 0.18),
 				"hat_color": Color(0.24, 0.16, 0.13),
-			}
+			})
 		_:
-			return {
+			return EnemyDefinition.new({
 				"id": ENEMY_GOBBELIN,
 				"name": "Gobbelin",
 				"health": 2.0,
@@ -186,13 +191,13 @@ static func get_enemy_config(enemy_id: String) -> Dictionary:
 				"body_color": Color(0.30, 0.72, 0.25),
 				"ear_color": Color(0.19, 0.46, 0.18),
 				"hat_color": Color(0.20, 0.15, 0.12),
-			}
+			})
 
 
-static func get_wave_definition(wave: int) -> Dictionary:
+static func get_wave_definition(wave: int) -> WaveDefinition:
 	var scripted_waves := _get_scripted_waves()
 	if wave <= scripted_waves.size():
-		return scripted_waves[wave - 1].duplicate(true)
+		return scripted_waves[wave - 1]
 
 	return _make_scaling_wave(wave)
 
@@ -204,21 +209,13 @@ static func get_tower_upgrade_cost(level: int) -> int:
 	return TOWER_UPGRADE_BASE_COST + (level - 1) * TOWER_UPGRADE_COST_STEP
 
 
-static func _get_scripted_waves() -> Array[Dictionary]:
+static func _get_scripted_waves() -> Array[WaveDefinition]:
 	return [
-		{
-			"title": "Wave 1: gobbelins on the road.",
-			"enemy_ids": _repeat_enemy(ENEMY_GOBBELIN, 5),
-			"spawn_delay": 0.95,
-		},
-		{
-			"title": "Wave 2: a wider gobbelin push.",
-			"enemy_ids": _repeat_enemy(ENEMY_GOBBELIN, 7),
-			"spawn_delay": 0.85,
-		},
-		{
-			"title": "Wave 3: gnuruks join the sprint.",
-			"enemy_ids": [
+		WaveDefinition.from_values("Wave 1: gobbelins on the road.", _repeat_enemy(ENEMY_GOBBELIN, 5), 0.95),
+		WaveDefinition.from_values("Wave 2: a wider gobbelin push.", _repeat_enemy(ENEMY_GOBBELIN, 7), 0.85),
+		WaveDefinition.from_values(
+			"Wave 3: gnuruks join the sprint.",
+			[
 				ENEMY_GOBBELIN,
 				ENEMY_GOBBELIN,
 				ENEMY_GNURUK,
@@ -227,11 +224,11 @@ static func _get_scripted_waves() -> Array[Dictionary]:
 				ENEMY_GOBBELIN,
 				ENEMY_GOBBELIN,
 			],
-			"spawn_delay": 0.78,
-		},
-		{
-			"title": "Wave 4: fast feet and shielded heads.",
-			"enemy_ids": [
+			0.78
+		),
+		WaveDefinition.from_values(
+			"Wave 4: fast feet and shielded heads.",
+			[
 				ENEMY_GOBBELIN,
 				ENEMY_GNURUK,
 				ENEMY_GOBBELIN,
@@ -241,11 +238,11 @@ static func _get_scripted_waves() -> Array[Dictionary]:
 				ENEMY_GNURUK,
 				ENEMY_GOBBELIN,
 			],
-			"spawn_delay": 0.72,
-		},
-		{
-			"title": "Wave 5: the first gnogre lumbers in.",
-			"enemy_ids": [
+			0.72
+		),
+		WaveDefinition.from_values(
+			"Wave 5: the first gnogre lumbers in.",
+			[
 				ENEMY_GOBBELIN,
 				ENEMY_GNURUK,
 				ENEMY_GOBBELIN,
@@ -255,12 +252,12 @@ static func _get_scripted_waves() -> Array[Dictionary]:
 				ENEMY_GOBBELIN,
 				ENEMY_GNOGRE,
 			],
-			"spawn_delay": 0.68,
-		},
+			0.68
+		),
 	]
 
 
-static func _make_scaling_wave(wave: int) -> Dictionary:
+static func _make_scaling_wave(wave: int) -> WaveDefinition:
 	var enemy_ids: Array[String] = []
 	var count := 6 + wave
 	for index in range(count):
@@ -271,11 +268,11 @@ static func _make_scaling_wave(wave: int) -> Dictionary:
 		else:
 			enemy_ids.append(ENEMY_GOBBELIN)
 
-	return {
-		"title": "Wave %d: mixed raiders." % wave,
-		"enemy_ids": enemy_ids,
-		"spawn_delay": maxf(0.4, 0.78 - float(wave - 5) * 0.035),
-	}
+	return WaveDefinition.from_values(
+		"Wave %d: mixed raiders." % wave,
+		enemy_ids,
+		maxf(0.4, 0.78 - float(wave - 5) * 0.035)
+	)
 
 
 static func _repeat_enemy(enemy_id: String, count: int) -> Array[String]:
@@ -286,70 +283,70 @@ static func _repeat_enemy(enemy_id: String, count: int) -> Array[String]:
 	return enemy_ids
 
 
-static func _get_upgrade_rewards() -> Array[Dictionary]:
+static func _get_upgrade_rewards() -> Array[RewardDefinition]:
 	return [
-		{
+		RewardDefinition.new({
 			"id": "sharper_runes",
-			"type": "modifier",
+			"type": RewardDefinition.TYPE_MODIFIER,
 			"title": "Sharper Runes",
 			"description": "+20% tower damage.",
 			"damage_multiplier": 0.20,
-		},
-		{
+		}),
+		RewardDefinition.new({
 			"id": "focus_lenses",
-			"type": "modifier",
+			"type": RewardDefinition.TYPE_MODIFIER,
 			"title": "Focus Lenses",
 			"description": "+0.8 tower range.",
 			"range_bonus": 0.8,
-		},
-		{
+		}),
+		RewardDefinition.new({
 			"id": "quick_chanting",
-			"type": "modifier",
+			"type": RewardDefinition.TYPE_MODIFIER,
 			"title": "Quick Chanting",
 			"description": "Towers fire 12% faster.",
 			"fire_rate_multiplier": 0.88,
-		},
-		{
+		}),
+		RewardDefinition.new({
 			"id": "battle_scribes",
-			"type": "modifier",
+			"type": RewardDefinition.TYPE_MODIFIER,
 			"title": "Battle Scribes",
 			"description": "+15% damage and +0.4 range.",
 			"damage_multiplier": 0.15,
 			"range_bonus": 0.4,
-		},
-		{
+		}),
+		RewardDefinition.new({
 			"id": "haste_runes",
-			"type": "modifier",
+			"type": RewardDefinition.TYPE_MODIFIER,
 			"title": "Haste Runes",
 			"description": "Towers fire 10% faster.",
 			"fire_rate_multiplier": 0.90,
-		},
+		}),
 	]
 
 
-static func _make_unlock_reward(tower_id: String) -> Dictionary:
-	var tower_config := get_tower_config(tower_id)
-	return {
+static func _make_unlock_reward(tower_id: String) -> RewardDefinition:
+	var tower_definition := get_tower_definition(tower_id)
+	return RewardDefinition.new({
 		"id": "unlock_%s" % tower_id,
-		"type": "unlock_tower",
-		"title": "Unlock %s" % str(tower_config.get("short_name", tower_config.get("name", "Tower"))),
-		"description": str(tower_config.get("description", "Adds a new tower to the build bar.")),
+		"type": RewardDefinition.TYPE_UNLOCK_TOWER,
+		"title": "Unlock %s" % tower_definition.short_name,
+		"description": tower_definition.description,
 		"tower_id": tower_id,
-	}
+	})
 
 
-static func _make_gold_reward(reward_level: int, index: int) -> Dictionary:
-	return {
+static func _make_gold_reward(reward_level: int, index: int) -> RewardDefinition:
+	return RewardDefinition.new({
 		"id": "gold_cache_%d_%d" % [reward_level, index],
-		"type": "gold",
+		"type": RewardDefinition.TYPE_GOLD,
 		"title": "Royal Stipend",
 		"description": "+75 gold for more building.",
 		"gold": 75,
-	}
+	})
 
 
-static func _pick_reward_choices(candidates: Array[Dictionary], reward_level: int) -> Array[Dictionary]:
-	var choices: Array[Dictionary] = []
+static func _pick_reward_choices(candidates: Array[RewardDefinition], reward_level: int) -> Array[RewardDefinition]:
+	var choices: Array[RewardDefinition] = []
 	if not candidates.is_empty():
 		var start_index := reward_level % candidates.size()
 		for offset in range(candidates.size()):

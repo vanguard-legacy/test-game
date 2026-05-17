@@ -1,6 +1,11 @@
 extends Node3D
 class_name PrototypeTowerPlacement
 
+const BuildPlacementResult := preload("res://scripts/build_placement_result.gd")
+
+# Handles the preview/click lifecycle for placing towers. Main decides which
+# tower is being built; LevelMap decides whether the hovered terrain is legal.
+
 signal placement_confirmed(position: Vector3)
 signal placement_cancelled
 signal placement_rejected(reason: String)
@@ -12,7 +17,7 @@ var level_map: PrototypeLevelMap
 var active_camera: Camera3D
 var occupied_positions: Array[Vector3] = []
 var is_active: bool = false
-var current_result: Dictionary = {}
+var current_result: BuildPlacementResult = BuildPlacementResult.new()
 
 var preview: MeshInstance3D
 var valid_material: StandardMaterial3D
@@ -40,7 +45,7 @@ func cancel_placement() -> void:
 		return
 
 	is_active = false
-	current_result.clear()
+	current_result = BuildPlacementResult.new()
 	preview.visible = false
 	placement_cancelled.emit()
 	placement_mode_changed.emit(false)
@@ -77,10 +82,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT:
 		return
 
-	if bool(current_result.get("is_valid", false)):
-		placement_confirmed.emit(current_result["position"])
+	if current_result.is_valid:
+		placement_confirmed.emit(current_result.position)
 	else:
-		placement_rejected.emit(str(current_result.get("reason", "Choose a valid patch of land.")))
+		placement_rejected.emit(current_result.reason if not current_result.reason.is_empty() else "Choose a valid patch of land.")
 
 	get_viewport().set_input_as_handled()
 
@@ -88,15 +93,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func _update_preview() -> void:
 	var mouse_position := get_viewport().get_mouse_position()
 	current_result = level_map.find_build_position(active_camera, mouse_position, occupied_positions)
-	var has_hit := bool(current_result.get("has_hit", false))
-	preview.visible = has_hit
+	preview.visible = current_result.has_hit
 
-	if not has_hit:
+	if not current_result.has_hit:
 		return
 
-	var placement_position: Vector3 = current_result["position"]
-	preview.global_position = placement_position - Vector3(0.0, PREVIEW_SURFACE_OFFSET, 0.0)
-	preview.material_override = valid_material if bool(current_result.get("is_valid", false)) else invalid_material
+	preview.global_position = current_result.position - Vector3(0.0, PREVIEW_SURFACE_OFFSET, 0.0)
+	preview.material_override = valid_material if current_result.is_valid else invalid_material
 
 
 func _build_preview() -> void:

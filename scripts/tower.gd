@@ -2,6 +2,11 @@ extends Node3D
 class_name PrototypeTower
 
 const GameBalance := preload("res://scripts/game_balance.gd")
+const TowerDefinition := preload("res://scripts/tower_definition.gd")
+const TowerModifiers := preload("res://scripts/tower_modifiers.gd")
+
+# Tower combat actor. Definitions provide base identity and visuals; local level
+# and run-wide modifiers combine into the live combat stats recalculated here.
 
 var targets: Array[PrototypeEnemy] = []
 var cooldown: float = 0.0
@@ -19,7 +24,7 @@ var beam_color: Color = Color(0.85, 0.95, 1.0)
 var slow_multiplier: float = 1.0
 var slow_duration: float = 0.0
 var splash_radius: float = 0.0
-var global_modifiers: Dictionary = GameBalance.get_default_tower_modifiers()
+var global_modifiers: TowerModifiers = GameBalance.get_default_tower_modifiers()
 var beam_visible_timer: float = 0.0
 var beam_mesh := ImmediateMesh.new()
 
@@ -47,18 +52,18 @@ func _process(delta: float) -> void:
 	cooldown = fire_rate
 
 
-func setup(new_tower_id: String, modifiers: Dictionary) -> void:
+func setup(new_tower_id: String, modifiers: TowerModifiers) -> void:
 	tower_id = new_tower_id
-	global_modifiers = modifiers.duplicate(true)
-	_apply_tower_config(GameBalance.get_tower_config(tower_id))
+	global_modifiers = modifiers.duplicate_modifiers()
+	_apply_tower_definition(GameBalance.get_tower_definition(tower_id))
 
 
 func set_targets(new_targets: Array[PrototypeEnemy]) -> void:
 	targets = new_targets
 
 
-func apply_global_modifiers(modifiers: Dictionary) -> void:
-	global_modifiers = modifiers.duplicate(true)
+func apply_global_modifiers(modifiers: TowerModifiers) -> void:
+	global_modifiers = modifiers.duplicate_modifiers()
 	_recalculate_stats()
 	_update_upgrade_visuals()
 
@@ -111,18 +116,11 @@ func get_upgrade_summary() -> String:
 
 
 func get_hover_description() -> String:
-	var effect_summary := "Single-target magic."
-	match effect:
-		GameBalance.TOWER_EFFECT_FROST:
-			effect_summary = "Slows enemies while dealing steady damage."
-		GameBalance.TOWER_EFFECT_SPLASH:
-			effect_summary = "Deals splash damage around the target."
-
-	return "Damage %.1f  Range %.1f\nFires every %.2fs\n%s\n%s" % [damage, attack_range, fire_rate, effect_summary, get_upgrade_summary()]
+	return "Damage %.1f  Range %.1f\nFires every %.2fs\n%s\n%s" % [damage, attack_range, fire_rate, _get_effect_summary(), get_upgrade_summary()]
 
 
 func _ready() -> void:
-	_apply_tower_config(GameBalance.get_tower_config(tower_id))
+	_apply_tower_definition(GameBalance.get_tower_definition(tower_id))
 	_update_upgrade_visuals()
 
 
@@ -145,31 +143,38 @@ func _attack(target: PrototypeEnemy) -> void:
 			target.take_damage(damage)
 
 
-func _apply_tower_config(tower_config: Dictionary) -> void:
-	tower_type_name = str(tower_config.get("name", "G'wizard Tower"))
-	base_damage = float(tower_config.get("damage", GameBalance.TOWER_BASE_DAMAGE))
-	base_range = float(tower_config.get("range", GameBalance.TOWER_BASE_RANGE))
-	base_fire_rate = float(tower_config.get("fire_rate", GameBalance.TOWER_BASE_FIRE_RATE))
-	effect = str(tower_config.get("effect", GameBalance.TOWER_EFFECT_BOLT))
-	beam_color = tower_config.get("beam_color", Color(0.85, 0.95, 1.0))
-	slow_multiplier = float(tower_config.get("slow_multiplier", 1.0))
-	slow_duration = float(tower_config.get("slow_duration", 0.0))
-	splash_radius = float(tower_config.get("splash_radius", 0.0))
-	roof.material_override = PrototypeMaterials.standard(tower_config.get("roof_color", Color(0.35, 0.13, 0.45)))
-	banner.material_override = PrototypeMaterials.standard(tower_config.get("banner_color", Color(0.88, 0.72, 0.28)))
-	focus_crystal.material_override = PrototypeMaterials.transparent(tower_config.get("crystal_color", Color(0.38, 0.86, 1.0)))
+func _get_effect_summary() -> String:
+	match effect:
+		GameBalance.TOWER_EFFECT_FROST:
+			return "Slows enemies while dealing steady damage."
+		GameBalance.TOWER_EFFECT_SPLASH:
+			return "Deals splash damage around the target."
+		_:
+			return "Single-target magic."
+
+
+func _apply_tower_definition(definition: TowerDefinition) -> void:
+	tower_type_name = definition.display_name
+	base_damage = definition.base_damage
+	base_range = definition.base_range
+	base_fire_rate = definition.base_fire_rate
+	effect = definition.effect
+	beam_color = definition.beam_color
+	slow_multiplier = definition.slow_multiplier
+	slow_duration = definition.slow_duration
+	splash_radius = definition.splash_radius
+	roof.material_override = PrototypeMaterials.standard(definition.roof_color)
+	banner.material_override = PrototypeMaterials.standard(definition.banner_color)
+	focus_crystal.material_override = PrototypeMaterials.transparent(definition.crystal_color)
 	beam.material_override = PrototypeMaterials.unshaded(beam_color)
 	_recalculate_stats()
 	_update_upgrade_visuals()
 
 
 func _recalculate_stats() -> void:
-	var damage_multiplier := float(global_modifiers.get("damage_multiplier", 1.0))
-	var range_bonus := float(global_modifiers.get("range_bonus", 0.0))
-	var fire_rate_multiplier := float(global_modifiers.get("fire_rate_multiplier", 1.0))
-	damage = (base_damage + float(level - 1) * GameBalance.TOWER_DAMAGE_STEP) * damage_multiplier
-	attack_range = base_range + float(level - 1) * GameBalance.TOWER_RANGE_STEP + range_bonus
-	fire_rate = maxf(GameBalance.TOWER_MIN_FIRE_RATE, (base_fire_rate - float(level - 1) * GameBalance.TOWER_FIRE_RATE_STEP) * fire_rate_multiplier)
+	damage = (base_damage + float(level - 1) * GameBalance.TOWER_DAMAGE_STEP) * global_modifiers.damage_multiplier
+	attack_range = base_range + float(level - 1) * GameBalance.TOWER_RANGE_STEP + global_modifiers.range_bonus
+	fire_rate = maxf(GameBalance.TOWER_MIN_FIRE_RATE, (base_fire_rate - float(level - 1) * GameBalance.TOWER_FIRE_RATE_STEP) * global_modifiers.fire_rate_multiplier)
 
 
 func _update_upgrade_visuals() -> void:

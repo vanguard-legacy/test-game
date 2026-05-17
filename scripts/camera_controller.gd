@@ -1,6 +1,12 @@
 extends Node
 class_name PrototypeCameraController
 
+const TerrainQuery := preload("res://scripts/terrain_query.gd")
+
+# RTS-style camera controller. Middle-drag panning grabs a fixed-height plane
+# under the cursor so the terrain appears to move with the mouse without
+# accidental zooming over hills.
+
 const ROTATE_BUTTON: MouseButton = MOUSE_BUTTON_RIGHT
 const PAN_BUTTON: MouseButton = MOUSE_BUTTON_MIDDLE
 
@@ -75,6 +81,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _handle_mouse_button(mouse_button: InputEventMouseButton) -> void:
+	if _is_mouse_over_ui():
+		_stop_mouse_drag()
+		return
+
 	if mouse_button.button_index == ROTATE_BUTTON:
 		is_rotating = mouse_button.pressed
 		get_viewport().set_input_as_handled()
@@ -85,9 +95,9 @@ func _handle_mouse_button(mouse_button: InputEventMouseButton) -> void:
 		has_pan_anchor = false
 		if is_panning:
 			var anchor_result := _get_terrain_under_cursor(mouse_button.position)
-			has_pan_anchor = bool(anchor_result.get("has_hit", false))
+			has_pan_anchor = anchor_result.has_hit
 			if has_pan_anchor:
-				pan_anchor = anchor_result["position"]
+				pan_anchor = anchor_result.position
 				pan_plane_height = pan_anchor.y
 		get_viewport().set_input_as_handled()
 		return
@@ -101,6 +111,16 @@ func _handle_mouse_button(mouse_button: InputEventMouseButton) -> void:
 	elif mouse_button.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 		distance = minf(max_distance, distance + zoom_step)
 		get_viewport().set_input_as_handled()
+
+
+func _is_mouse_over_ui() -> bool:
+	return get_viewport().gui_get_hovered_control() != null
+
+
+func _stop_mouse_drag() -> void:
+	is_rotating = false
+	is_panning = false
+	has_pan_anchor = false
 
 
 func _pan_from_keyboard_and_edges(delta: float) -> void:
@@ -143,10 +163,10 @@ func _pan_by_terrain_anchor(mouse_position: Vector2) -> void:
 		return
 
 	var current_result := _get_cursor_on_pan_plane(mouse_position)
-	if not bool(current_result.get("has_hit", false)):
+	if not current_result.has_hit:
 		return
 
-	var current_position: Vector3 = current_result["position"]
+	var current_position := current_result.position
 	var pan_delta := pan_anchor - current_position
 	pan_delta.y = 0.0
 	target_position += pan_delta
@@ -178,21 +198,22 @@ func _clamp_target_position() -> void:
 	target_position.z = clampf(target_position.z, -margin, margin)
 
 
-func _get_terrain_under_cursor(mouse_position: Vector2) -> Dictionary:
+func _get_terrain_under_cursor(mouse_position: Vector2) -> TerrainQuery:
 	if not terrain_picker.is_valid():
-		return {"has_hit": false}
+		return TerrainQuery.new()
 
-	return terrain_picker.call(camera, mouse_position)
+	var query := terrain_picker.call(camera, mouse_position) as TerrainQuery
+	return query if query != null else TerrainQuery.new()
 
 
-func _get_cursor_on_pan_plane(mouse_position: Vector2) -> Dictionary:
+func _get_cursor_on_pan_plane(mouse_position: Vector2) -> TerrainQuery:
 	var ray_origin := camera.project_ray_origin(mouse_position)
 	var ray_direction := camera.project_ray_normal(mouse_position)
 	if absf(ray_direction.y) < 0.001:
-		return {"has_hit": false}
+		return TerrainQuery.new()
 
 	var distance_to_plane := (pan_plane_height - ray_origin.y) / ray_direction.y
 	if distance_to_plane <= 0.0:
-		return {"has_hit": false}
+		return TerrainQuery.new()
 
-	return {"has_hit": true, "position": ray_origin + ray_direction * distance_to_plane}
+	return TerrainQuery.new(true, ray_origin + ray_direction * distance_to_plane)

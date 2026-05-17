@@ -2,7 +2,15 @@ extends CanvasLayer
 class_name PrototypeHud
 
 const GameBalance := preload("res://scripts/game_balance.gd")
+const HudViewModel := preload("res://scripts/hud_view_model.gd")
+const RewardDefinition := preload("res://scripts/reward_definition.gd")
+const TowerDefinition := preload("res://scripts/tower_definition.gd")
+const TooltipData := preload("res://scripts/tooltip_data.gd")
 const TOOLTIP_OFFSET: Vector2 = Vector2(18.0, 18.0)
+
+# Presentation-only HUD. Gameplay state arrives as typed view models and
+# definitions; this script formats controls, emits user intent, and owns tooltip
+# placement without changing run state directly.
 
 signal build_tower_requested(tower_id: String)
 signal cancel_build_requested
@@ -33,7 +41,8 @@ signal quit_requested
 @onready var selected_tower_label: Label = $Root/Layout/BottomRow/UpgradePanel/Margin/Stack/SelectedTowerLabel
 @onready var tower_stats_label: Label = $Root/Layout/BottomRow/UpgradePanel/Margin/Stack/TowerStatsLabel
 @onready var message_title: Label = $Root/Layout/BottomRow/MessagePanel/Margin/Stack/MessageTitle
-@onready var message_label: Label = $Root/Layout/BottomRow/MessagePanel/Margin/Stack/MessageLabel
+@onready var message_scroll: ScrollContainer = $Root/Layout/BottomRow/MessagePanel/Margin/Stack/MessageScroll
+@onready var message_label: Label = $Root/Layout/BottomRow/MessagePanel/Margin/Stack/MessageScroll/MessageLabel
 @onready var build_tower_button: Button = $Root/Layout/BottomRow/BuildPanel/Margin/Stack/BuildTowerButton
 @onready var build_tower_button_2: Button = $Root/Layout/BottomRow/BuildPanel/Margin/Stack/BuildTowerButton2
 @onready var build_tower_button_3: Button = $Root/Layout/BottomRow/BuildPanel/Margin/Stack/BuildTowerButton3
@@ -59,16 +68,27 @@ signal quit_requested
 
 var tower_slot_buttons: Array[Button] = []
 var tower_slot_ids: Array[String] = []
-var tower_slot_tooltips: Array[Dictionary] = []
+var tower_slot_tooltips: Array[TooltipData] = []
 var reward_choice_buttons: Array[Button] = []
 var tower_tooltip_source: String = ""
+var command_log: Array[String] = []
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_cache_button_groups()
+	_apply_styles()
+	_connect_button_signals()
+	set_build_mode(false)
+	update_selected_tower(null, 0)
+
+
+func _cache_button_groups() -> void:
 	tower_slot_buttons = [build_tower_button, build_tower_button_2, build_tower_button_3]
 	reward_choice_buttons = [reward_choice_1_button, reward_choice_2_button, reward_choice_3_button]
-	_apply_styles()
+
+
+func _connect_button_signals() -> void:
 	for index in range(tower_slot_buttons.size()):
 		tower_slot_buttons[index].pressed.connect(_on_tower_slot_button_pressed.bind(index))
 		tower_slot_buttons[index].mouse_entered.connect(_on_tower_slot_mouse_entered.bind(index))
@@ -85,8 +105,6 @@ func _ready() -> void:
 	new_game_button.pressed.connect(_on_new_game_button_pressed)
 	restart_button.pressed.connect(_on_restart_button_pressed)
 	quit_button.pressed.connect(_on_quit_button_pressed)
-	set_build_mode(false)
-	update_selected_tower(null, 0)
 
 
 func _process(_delta: float) -> void:
@@ -94,18 +112,25 @@ func _process(_delta: float) -> void:
 		_position_tower_tooltip()
 
 
-func update_stats(wave: int, lives: int, score: int, gold: int, xp: int, xp_to_next: int, incoming: int, tower_count: int) -> void:
-	wave_value.text = str(wave)
-	lives_value.text = str(lives)
-	gold_value.text = str(gold)
-	xp_value.text = "%d/%d" % [xp, xp_to_next]
-	score_value.text = str(score)
-	towers_value.text = str(tower_count)
-	incoming_value.text = str(incoming)
+func update_from_view_model(view_model: HudViewModel) -> void:
+	_update_stats(view_model)
+	_update_build_options(view_model)
+	start_wave_button.disabled = not view_model.can_start_wave
 
 
 func set_message(message: String) -> void:
-	message_label.text = message
+	if message.is_empty():
+		return
+
+	command_log.append(message)
+	message_label.text = "\n".join(command_log)
+	_scroll_command_log_to_bottom.call_deferred()
+
+
+func clear_message_log() -> void:
+	command_log.clear()
+	message_label.text = ""
+	message_scroll.scroll_vertical = 0
 
 
 func set_build_mode(is_building: bool) -> void:
@@ -117,36 +142,37 @@ func set_build_mode(is_building: bool) -> void:
 			button.disabled = true
 
 
-func update_build_options(owned_tower_ids: Array[String], active_tower_id: String, gold: int, can_build: bool, is_building: bool) -> void:
+func _update_stats(view_model: HudViewModel) -> void:
+	wave_value.text = str(view_model.wave)
+	lives_value.text = str(view_model.lives)
+	gold_value.text = str(view_model.gold)
+	xp_value.text = "%d/%d" % [view_model.xp, view_model.xp_to_next]
+	score_value.text = str(view_model.score)
+	towers_value.text = str(view_model.tower_count)
+	incoming_value.text = str(view_model.incoming)
+
+
+func _update_build_options(view_model: HudViewModel) -> void:
 	tower_slot_ids.clear()
 	tower_slot_tooltips.clear()
 	for slot_index in range(tower_slot_buttons.size()):
 		var button := tower_slot_buttons[slot_index]
-		if slot_index >= owned_tower_ids.size():
+		if slot_index >= view_model.owned_tower_ids.size():
 			tower_slot_ids.append("")
-			tower_slot_tooltips.append({
-				"title": "Locked Tower Slot",
-				"body": "Choose tower unlock rewards to add more build options.",
-			})
+			tower_slot_tooltips.append(TooltipData.new("Locked Tower Slot", "Choose tower unlock rewards to add more build options."))
 			button.text = "Locked Tower Slot"
 			button.tooltip_text = ""
 			button.disabled = true
 			continue
 
-		var tower_id := owned_tower_ids[slot_index]
-		var tower_config := GameBalance.get_tower_config(tower_id)
-		var tower_cost := int(tower_config.get("cost", GameBalance.TOWER_COST))
-		var tower_name := str(tower_config.get("short_name", tower_config.get("name", "Tower")))
+		var tower_id := view_model.owned_tower_ids[slot_index]
+		var tower_definition := GameBalance.get_tower_definition(tower_id)
 		tower_slot_ids.append(tower_id)
-		tower_slot_tooltips.append(_get_build_slot_tooltip(tower_config))
-		button.text = "%s (%d)" % [tower_name, tower_cost]
+		tower_slot_tooltips.append(_get_build_slot_tooltip(tower_definition))
+		button.text = "%s (%d)" % [tower_definition.short_name, tower_definition.cost]
 		button.tooltip_text = ""
-		button.disabled = is_building or not can_build or gold < tower_cost
-		button.modulate.a = 1.0 if tower_id == active_tower_id else 0.88
-
-
-func set_start_wave_enabled(is_enabled: bool) -> void:
-	start_wave_button.disabled = not is_enabled
+		button.disabled = view_model.is_building or not view_model.can_build or view_model.gold < tower_definition.cost
+		button.modulate.a = 1.0 if tower_id == view_model.active_tower_id else 0.88
 
 
 func update_selected_tower(tower: PrototypeTower, gold: int) -> void:
@@ -174,7 +200,7 @@ func hide_menu() -> void:
 	menu_overlay.visible = false
 
 
-func show_reward_choices(choices: Array[Dictionary]) -> void:
+func show_reward_choices(choices: Array[RewardDefinition]) -> void:
 	reward_overlay.visible = true
 	reward_title.text = "Choose a Reward"
 	for index in range(reward_choice_buttons.size()):
@@ -185,7 +211,7 @@ func show_reward_choices(choices: Array[Dictionary]) -> void:
 			continue
 
 		var reward := choices[index]
-		button.text = "%s\n%s" % [str(reward.get("title", "Reward")), str(reward.get("description", ""))]
+		button.text = "%s\n%s" % [reward.title, reward.description]
 		button.disabled = false
 
 
@@ -227,7 +253,7 @@ func _on_tower_slot_mouse_entered(slot_index: int) -> void:
 		return
 
 	var tooltip := tower_slot_tooltips[slot_index]
-	show_tower_tooltip(str(tooltip.get("title", "")), str(tooltip.get("body", "")), "ui")
+	show_tower_tooltip(tooltip.title, tooltip.body, "ui")
 
 
 func _on_tower_slot_mouse_exited() -> void:
@@ -342,28 +368,8 @@ func _style_button(button: Button) -> void:
 	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 
 
-func _get_build_slot_tooltip(tower_config: Dictionary) -> Dictionary:
-	var tower_name := str(tower_config.get("name", "Tower"))
-	var description := str(tower_config.get("description", ""))
-	var body := "%s\nCost %d gold\nDamage %.1f  Range %.1f\nFires every %.2fs\n%s" % [
-		description,
-		int(tower_config.get("cost", GameBalance.TOWER_COST)),
-		float(tower_config.get("damage", GameBalance.TOWER_BASE_DAMAGE)),
-		float(tower_config.get("range", GameBalance.TOWER_BASE_RANGE)),
-		float(tower_config.get("fire_rate", GameBalance.TOWER_BASE_FIRE_RATE)),
-		_get_effect_summary(tower_config),
-	]
-	return {"title": tower_name, "body": body}
-
-
-func _get_effect_summary(tower_config: Dictionary) -> String:
-	match str(tower_config.get("effect", GameBalance.TOWER_EFFECT_BOLT)):
-		GameBalance.TOWER_EFFECT_FROST:
-			return "Applies a slowing chill on hit."
-		GameBalance.TOWER_EFFECT_SPLASH:
-			return "Splashes nearby enemies around the target."
-		_:
-			return "Reliable single-target damage."
+func _get_build_slot_tooltip(tower_definition: TowerDefinition) -> TooltipData:
+	return TooltipData.new(tower_definition.display_name, tower_definition.get_build_tooltip_body())
 
 
 func _position_tower_tooltip() -> void:
@@ -376,3 +382,11 @@ func _position_tower_tooltip() -> void:
 	target_position.x = minf(target_position.x, viewport_size.x - tooltip_size.x - 12.0)
 	target_position.y = minf(target_position.y, viewport_size.y - tooltip_size.y - 12.0)
 	tower_tooltip.position = target_position.max(Vector2(12.0, 12.0))
+
+
+func _scroll_command_log_to_bottom() -> void:
+	var vertical_bar := message_scroll.get_v_scroll_bar()
+	if vertical_bar == null:
+		return
+
+	message_scroll.scroll_vertical = int(vertical_bar.max_value)

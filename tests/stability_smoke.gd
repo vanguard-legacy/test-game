@@ -1,7 +1,6 @@
 extends SceneTree
 
 const GameBalance := preload("res://scripts/game_balance.gd")
-
 const MAIN_SCENE: PackedScene = preload("res://scenes/main.tscn")
 const MAX_STEPS_PER_WAVE: int = 1200
 const SIMULATION_STEP: float = 0.1
@@ -72,8 +71,8 @@ func _verify_reward_choices() -> void:
 			quit(1)
 			return
 
-		for choice in choices:
-			if str(choice.get("id", "")).is_empty():
+		for reward in choices:
+			if reward.id.is_empty():
 				push_error("Reward choice had an empty id at level %d." % reward_level)
 				quit(1)
 				return
@@ -81,17 +80,23 @@ func _verify_reward_choices() -> void:
 
 func _place_test_towers(main: Node) -> void:
 	print("STABILITY_SMOKE_PLACE_TOWERS")
-	var placements: Array[Dictionary] = [
-		{"tower_id": GameBalance.TOWER_GWIZARD, "point": Vector2(-2.7, 0.2)},
-		{"tower_id": GameBalance.TOWER_GWIZARD, "point": Vector2(-0.5, 1.45)},
-		{"tower_id": GameBalance.TOWER_LONGBOW, "point": Vector2(1.4, -1.35)},
-		{"tower_id": GameBalance.TOWER_FROST, "point": Vector2(3.4, -0.85)},
+	var tower_ids: Array[String] = [
+		GameBalance.TOWER_GWIZARD,
+		GameBalance.TOWER_GWIZARD,
+		GameBalance.TOWER_LONGBOW,
+		GameBalance.TOWER_FROST,
+	]
+	var ground_points: Array[Vector2] = [
+		Vector2(-2.7, 0.2),
+		Vector2(-0.5, 1.45),
+		Vector2(1.4, -1.35),
+		Vector2(3.4, -0.85),
 	]
 
-	for placement in placements:
-		var ground_point: Vector2 = placement["point"]
+	for index in range(tower_ids.size()):
+		var ground_point := ground_points[index]
 		var tower_position: Vector3 = main.level_map._world_from_ground(ground_point, 0.62)
-		main.selected_tower_id = str(placement["tower_id"])
+		main.selected_tower_id = tower_ids[index]
 		main._on_tower_placement_confirmed(tower_position)
 
 

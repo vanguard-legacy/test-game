@@ -4,6 +4,11 @@ class_name PrototypeEnemy
 signal reached_exit(enemy: PrototypeEnemy)
 signal defeated(enemy: PrototypeEnemy)
 
+const EnemyDefinition := preload("res://scripts/enemy_definition.gd")
+
+# Enemy movement/combat actor. Spawn setup copies an EnemyDefinition so each
+# instance can be damaged, slowed, and freed without mutating shared balance.
+
 const BASE_SPEED: float = 1.75
 
 var path_points: Array[Vector3] = []
@@ -45,17 +50,20 @@ func _process(delta: float) -> void:
 		global_position += to_target.normalized() * step
 
 
-func setup(points: Array[Vector3], wave: int, enemy_config: Dictionary) -> void:
+func setup(points: Array[Vector3], wave: int, definition: EnemyDefinition) -> void:
 	path_points = points
 	target_index = 1
-	enemy_type_name = str(enemy_config.get("name", "Gobbelin"))
-	health = float(enemy_config.get("health", 2.0)) + float(wave) * float(enemy_config.get("health_scale", 0.25))
-	speed = float(enemy_config.get("speed", BASE_SPEED)) + float(wave) * float(enemy_config.get("speed_scale", 0.04))
-	gold_reward = int(enemy_config.get("gold", 10))
-	score_reward = int(enemy_config.get("score", 10))
-	xp_reward = int(enemy_config.get("xp", 6))
+	enemy_type_name = definition.display_name
+	health = definition.health_for_wave(wave)
+	speed = definition.speed_for_wave(wave)
+	gold_reward = definition.gold_reward
+	score_reward = definition.score_reward
+	xp_reward = definition.xp_reward
+	if path_points.is_empty():
+		return
+
 	global_position = path_points[0]
-	_apply_enemy_visuals(enemy_config)
+	_apply_enemy_visuals(definition)
 
 
 func take_damage(amount: float) -> void:
@@ -73,13 +81,13 @@ func apply_slow(multiplier: float, duration: float) -> void:
 	slow_timer = maxf(slow_timer, duration)
 
 
-func _apply_enemy_visuals(enemy_config: Dictionary) -> void:
+func _apply_enemy_visuals(definition: EnemyDefinition) -> void:
 	name = enemy_type_name
-	scale = Vector3.ONE * float(enemy_config.get("scale", 1.0))
-	body.material_override = PrototypeMaterials.standard(enemy_config.get("body_color", Color(0.30, 0.72, 0.25)))
+	scale = Vector3.ONE * definition.visual_scale
+	body.material_override = PrototypeMaterials.standard(definition.body_color)
 	head.material_override = body.material_override
-	hat.material_override = PrototypeMaterials.standard(enemy_config.get("hat_color", Color(0.20, 0.15, 0.12)))
-	left_ear.material_override = PrototypeMaterials.standard(enemy_config.get("ear_color", Color(0.19, 0.46, 0.18)))
+	hat.material_override = PrototypeMaterials.standard(definition.hat_color)
+	left_ear.material_override = PrototypeMaterials.standard(definition.ear_color)
 	right_ear.material_override = left_ear.material_override
 
 

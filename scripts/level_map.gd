@@ -1,7 +1,14 @@
 extends Node3D
 class_name PrototypeLevelMap
 
+const BuildPlacementResult := preload("res://scripts/build_placement_result.gd")
 const CameraController := preload("res://scripts/camera_controller.gd")
+const RoadInfo := preload("res://scripts/road_info.gd")
+const TerrainQuery := preload("res://scripts/terrain_query.gd")
+
+# Procedural prototype map. This node owns terrain height, road shape, pathing,
+# build validation, and camera setup so gameplay code can ask higher-level
+# questions such as "where can I place?" or "how do enemies reach the exit?"
 
 const MAP_HALF_SIZE: float = 7.0
 const TERRAIN_CELLS: int = 56
@@ -77,28 +84,27 @@ func get_enemy_path() -> Array[Vector3]:
 	return find_path(get_start_position(), get_exit_position())
 
 
-func find_build_position(camera: Camera3D, mouse_position: Vector2, occupied_positions: Array[Vector3]) -> Dictionary:
+func find_build_position(camera: Camera3D, mouse_position: Vector2, occupied_positions: Array[Vector3]) -> BuildPlacementResult:
 	if camera == null:
-		return {"has_hit": false, "is_valid": false, "reason": "No camera available for placement."}
+		return BuildPlacementResult.new(false, false, Vector3.ZERO, "No camera available for placement.")
 
 	var hit := find_terrain_position(camera, mouse_position)
-	if not bool(hit.get("has_hit", false)):
-		return {"has_hit": false, "is_valid": false, "reason": "Aim at the terrain."}
+	if not hit.has_hit:
+		return BuildPlacementResult.new(false, false, Vector3.ZERO, "Aim at the terrain.")
 
-	var terrain_position: Vector3 = hit["position"]
+	var terrain_position := hit.position
 	var ground_point := Vector2(terrain_position.x, terrain_position.z)
 	var blocked_reason := _get_blocked_reason(ground_point, occupied_positions)
-	return {
-		"has_hit": true,
-		"is_valid": blocked_reason.is_empty(),
-		"position": terrain_position + Vector3(0.0, TOWER_ORIGIN_OFFSET, 0.0),
-		"reason": blocked_reason,
-	}
+	var build_position := terrain_position + Vector3(0.0, TOWER_ORIGIN_OFFSET, 0.0)
+	if blocked_reason.is_empty():
+		return BuildPlacementResult.new(true, true, build_position)
+
+	return BuildPlacementResult.new(true, false, build_position, blocked_reason)
 
 
-func find_terrain_position(camera: Camera3D, mouse_position: Vector2) -> Dictionary:
+func find_terrain_position(camera: Camera3D, mouse_position: Vector2) -> TerrainQuery:
 	if camera == null:
-		return {"has_hit": false}
+		return TerrainQuery.new()
 
 	var ray_origin := camera.project_ray_origin(mouse_position)
 	var ray_direction := camera.project_ray_normal(mouse_position)
@@ -164,7 +170,7 @@ func _add_road_mesh() -> void:
 				-MAP_HALF_SIZE + (float(z_index) + 0.5) * step
 			)
 			var road_info := _get_road_info(center)
-			if float(road_info["distance"]) > _road_half_width(float(road_info["progress"])) + 0.08:
+			if road_info.distance > _road_half_width(road_info.progress) + 0.08:
 				continue
 
 			var x0 := center.x - step * 0.5
@@ -235,9 +241,9 @@ func _world_from_ground(point: Vector2, y_offset: float = 0.0) -> Vector3:
 func _height_at(point: Vector2) -> float:
 	var rolling_height: float = 0.18 * sin(point.x * 0.75) + 0.12 * cos(point.y * 0.9) + 0.05 * sin((point.x + point.y) * 1.2)
 	var road_info := _get_road_info(point)
-	var progress := float(road_info["progress"])
+	var progress := road_info.progress
 	var road_height: float = _road_height(progress)
-	var road_blend: float = 1.0 - clampf(float(road_info["distance"]) / (_road_half_width(progress) + 1.15), 0.0, 1.0)
+	var road_blend: float = 1.0 - clampf(road_info.distance / (_road_half_width(progress) + 1.15), 0.0, 1.0)
 	road_blend = smoothstep(0.0, 1.0, road_blend)
 	return lerp(rolling_height, road_height, road_blend)
 
@@ -258,10 +264,10 @@ func _road_half_width(progress: float) -> float:
 
 func _is_road(point: Vector2) -> bool:
 	var road_info := _get_road_info(point)
-	return float(road_info["distance"]) <= _road_half_width(float(road_info["progress"]))
+	return road_info.distance <= _road_half_width(road_info.progress)
 
 
-func _get_road_info(point: Vector2) -> Dictionary:
+func _get_road_info(point: Vector2) -> RoadInfo:
 	var closest_distance: float = INF
 	var closest_progress := 0.0
 	var traveled := 0.0
@@ -281,7 +287,7 @@ func _get_road_info(point: Vector2) -> Dictionary:
 
 		traveled += segment_length
 
-	return {"distance": closest_distance, "progress": closest_progress}
+	return RoadInfo.new(closest_distance, closest_progress)
 
 
 func _road_length() -> float:
@@ -292,7 +298,7 @@ func _road_length() -> float:
 	return length
 
 
-func _find_terrain_hit(ray_origin: Vector3, ray_direction: Vector3) -> Dictionary:
+func _find_terrain_hit(ray_origin: Vector3, ray_direction: Vector3) -> TerrainQuery:
 	var previous_distance := 0.0
 	var previous_delta := ray_origin.y - _height_at(Vector2(ray_origin.x, ray_origin.z))
 
@@ -306,12 +312,12 @@ func _find_terrain_hit(ray_origin: Vector3, ray_direction: Vector3) -> Dictionar
 		if current_delta <= 0.0 and previous_delta >= 0.0:
 			var hit_distance := _refine_hit_distance(ray_origin, ray_direction, previous_distance, distance)
 			var hit := ray_origin + ray_direction * hit_distance
-			return {"has_hit": true, "position": Vector3(hit.x, _height_at(Vector2(hit.x, hit.z)), hit.z)}
+			return TerrainQuery.new(true, Vector3(hit.x, _height_at(Vector2(hit.x, hit.z)), hit.z))
 
 		previous_distance = distance
 		previous_delta = current_delta
 
-	return {"has_hit": false}
+	return TerrainQuery.new()
 
 
 func _refine_hit_distance(ray_origin: Vector3, ray_direction: Vector3, min_distance: float, max_distance: float) -> float:

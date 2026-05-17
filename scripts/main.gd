@@ -1,7 +1,13 @@
 extends Node3D
 
 const GameBalance := preload("res://scripts/game_balance.gd")
+const HudViewModel := preload("res://scripts/hud_view_model.gd")
+const RewardDefinition := preload("res://scripts/reward_definition.gd")
 const RunState := preload("res://scripts/run_state.gd")
+
+# Scene coordinator for the prototype. Main wires scenes together and translates
+# user intent into gameplay actions, while balance, run state, HUD formatting,
+# and per-node behavior stay in focused scripts.
 
 @export var enemy_scene: PackedScene
 @export var tower_scene: PackedScene
@@ -14,13 +20,18 @@ const RunState := preload("res://scripts/run_state.gd")
 
 var enemies: Array[PrototypeEnemy] = []
 var towers: Array[PrototypeTower] = []
-var run_state := RunState.new()
-var selected_tower: PrototypeTower
+var run_state: RunState = RunState.new()
+var selected_tower: PrototypeTower = null
 var selected_tower_id: String = GameBalance.TOWER_GWIZARD
-var active_reward_choices: Array[Dictionary] = []
+var active_reward_choices: Array[RewardDefinition] = []
 
 
 func _ready() -> void:
+	_connect_scene_signals()
+	_show_initial_menu()
+
+
+func _connect_scene_signals() -> void:
 	tower_placement.setup(level_map)
 	tower_placement.placement_confirmed.connect(_on_tower_placement_confirmed)
 	tower_placement.placement_cancelled.connect(_on_tower_placement_cancelled)
@@ -36,6 +47,10 @@ func _ready() -> void:
 	hud.new_game_requested.connect(_on_new_game_requested)
 	hud.restart_requested.connect(_on_restart_requested)
 	hud.quit_requested.connect(_on_quit_requested)
+
+
+func _show_initial_menu() -> void:
+	hud.clear_message_log()
 	hud.set_message("Open the menu to start a run.")
 	hud.show_main_menu("G'wizard Defense", false)
 	_update_ui()
@@ -49,6 +64,8 @@ func _process(delta: float) -> void:
 		_spawn_wave_enemies(delta)
 		_check_wave_complete()
 
+	# Hovering is intentionally owned by Main because tower picking needs the
+	# active 3D camera, while the tooltip rendering belongs to the HUD.
 	_update_hovered_tower()
 	_update_ui()
 
@@ -79,10 +96,10 @@ func _start_next_wave() -> void:
 		return
 
 	var next_wave: int = run_state.wave + 1
-	var wave_definition: Dictionary = GameBalance.get_wave_definition(next_wave)
+	var wave_definition := GameBalance.get_wave_definition(next_wave)
 	run_state.start_wave(wave_definition)
 	tower_placement.cancel_placement()
-	hud.set_message(str(wave_definition.get("title", "Wave %d begins." % run_state.wave)))
+	hud.set_message(wave_definition.title)
 
 
 func _spawn_wave_enemies(delta: float) -> void:
@@ -100,7 +117,7 @@ func _spawn_wave_enemies(delta: float) -> void:
 func _spawn_enemy(enemy_id: String) -> void:
 	var enemy := enemy_scene.instantiate() as PrototypeEnemy
 	enemy_container.add_child(enemy)
-	enemy.setup(level_map.get_enemy_path(), run_state.wave, GameBalance.get_enemy_config(enemy_id))
+	enemy.setup(level_map.get_enemy_path(), run_state.wave, GameBalance.get_enemy_definition(enemy_id))
 	enemy.reached_exit.connect(_on_enemy_reached_exit)
 	enemy.defeated.connect(_on_enemy_defeated)
 	enemies.append(enemy)
@@ -153,8 +170,8 @@ func _on_build_tower_requested(tower_id: String) -> void:
 
 	selected_tower_id = tower_id
 	tower_placement.begin_placement(_get_tower_positions())
-	var tower_config := GameBalance.get_tower_config(selected_tower_id)
-	hud.set_message("Place the %s on a green patch of land." % str(tower_config.get("name", "tower")))
+	var tower_definition := GameBalance.get_tower_definition(selected_tower_id)
+	hud.set_message("Place the %s on a green patch of land." % tower_definition.display_name)
 
 
 func _on_cancel_build_requested() -> void:
@@ -239,7 +256,7 @@ func _on_reward_choice_selected(choice_index: int) -> void:
 	active_reward_choices.clear()
 	hud.hide_reward_choices()
 	get_tree().paused = false
-	hud.set_message("Reward chosen: %s." % str(reward.get("title", "Upgrade")))
+	hud.set_message("Reward chosen: %s." % reward.title)
 	_update_ui()
 
 
@@ -294,6 +311,7 @@ func _restart_game() -> void:
 	selected_tower_id = GameBalance.TOWER_GWIZARD
 	active_reward_choices.clear()
 	run_state.reset(run_state.game_started)
+	hud.clear_message_log()
 	hud.set_message("Build a tower, then start the wave.")
 	hud.hide_menu()
 	hud.hide_reward_choices()
@@ -302,11 +320,27 @@ func _restart_game() -> void:
 
 
 func _update_ui() -> void:
-	hud.update_stats(run_state.wave, run_state.lives, run_state.score, run_state.gold, run_state.xp, run_state.xp_to_next, run_state.incoming_count(enemies.size()), towers.size())
-	hud.update_build_options(run_state.owned_tower_ids, selected_tower_id, run_state.gold, run_state.game_started and not run_state.game_over, tower_placement.is_active)
-	hud.set_start_wave_enabled(run_state.game_started and not run_state.game_over and not run_state.wave_active and not towers.is_empty())
+	hud.update_from_view_model(_make_hud_view_model())
 	hud.update_selected_tower(selected_tower, run_state.gold)
 	_sync_camera_controls()
+
+
+func _make_hud_view_model() -> HudViewModel:
+	var view_model := HudViewModel.new()
+	view_model.wave = run_state.wave
+	view_model.lives = run_state.lives
+	view_model.score = run_state.score
+	view_model.gold = run_state.gold
+	view_model.xp = run_state.xp
+	view_model.xp_to_next = run_state.xp_to_next
+	view_model.incoming = run_state.incoming_count(enemies.size())
+	view_model.tower_count = towers.size()
+	view_model.owned_tower_ids = run_state.owned_tower_ids.duplicate()
+	view_model.active_tower_id = selected_tower_id
+	view_model.can_build = run_state.game_started and not run_state.game_over
+	view_model.is_building = tower_placement.is_active
+	view_model.can_start_wave = run_state.game_started and not run_state.game_over and not run_state.wave_active and not towers.is_empty()
+	return view_model
 
 
 func _get_tower_positions() -> Array[Vector3]:
@@ -328,11 +362,11 @@ func _find_tower_at_mouse() -> PrototypeTower:
 		return null
 
 	var mouse_position := get_viewport().get_mouse_position()
-	var placement := level_map.find_build_position(camera, mouse_position, [])
-	if not bool(placement.get("has_hit", false)):
+	var terrain_hit := level_map.find_terrain_position(camera, mouse_position)
+	if not terrain_hit.has_hit:
 		return null
 
-	var hit_position: Vector3 = placement["position"]
+	var hit_position := terrain_hit.position
 	var hit_point := Vector2(hit_position.x, hit_position.z)
 	for tower in towers:
 		var tower_point := Vector2(tower.global_position.x, tower.global_position.z)
