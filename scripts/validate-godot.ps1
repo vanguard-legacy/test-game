@@ -47,11 +47,16 @@ $Godot = Resolve-Godot -ExplicitPath $GodotPath
 Write-Host "Using Godot: $Godot"
 Write-Host "Validating project: $ProjectRoot"
 
-& $Godot --headless --path $ProjectRoot --quit
+$Output = & $Godot --headless --path $ProjectRoot --quit 2>&1
 $ExitCode = $LASTEXITCODE
+$Output | ForEach-Object { Write-Host $_ }
 
 if ($null -ne $ExitCode -and $ExitCode -ne 0) {
     throw "Godot validation failed with exit code $ExitCode"
+}
+
+if ($Output -match "SCRIPT ERROR|GDScript Error|SHADOWED_|Parse Error|Compile Error") {
+    throw "Godot validation reported GDScript errors or warnings."
 }
 
 Write-Host "Godot validation completed."

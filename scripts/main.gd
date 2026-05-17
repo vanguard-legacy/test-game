@@ -16,6 +16,8 @@ var enemies: Array[PrototypeEnemy] = []
 var towers: Array[PrototypeTower] = []
 var run_state := RunState.new()
 var selected_tower: PrototypeTower
+var selected_tower_id: String = GameBalance.TOWER_GWIZARD
+var active_reward_choices: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -28,6 +30,7 @@ func _ready() -> void:
 	hud.cancel_build_requested.connect(_on_cancel_build_requested)
 	hud.start_wave_requested.connect(_on_start_wave_requested)
 	hud.upgrade_tower_requested.connect(_on_upgrade_tower_requested)
+	hud.reward_choice_selected.connect(_on_reward_choice_selected)
 	hud.menu_requested.connect(_on_menu_requested)
 	hud.resume_requested.connect(_on_resume_requested)
 	hud.new_game_requested.connect(_on_new_game_requested)
@@ -46,6 +49,7 @@ func _process(delta: float) -> void:
 		_spawn_wave_enemies(delta)
 		_check_wave_complete()
 
+	_update_hovered_tower()
 	_update_ui()
 
 
@@ -117,6 +121,8 @@ func _on_enemy_defeated(enemy: PrototypeEnemy) -> void:
 	enemy.queue_free()
 	run_state.score += enemy.score_reward
 	run_state.gold += enemy.gold_reward
+	if run_state.add_xp(enemy.xp_reward):
+		_open_reward_choices()
 
 
 func _check_wave_complete() -> void:
@@ -124,19 +130,31 @@ func _check_wave_complete() -> void:
 		return
 
 	run_state.wave_active = false
+	if run_state.add_xp(GameBalance.WAVE_CLEAR_XP):
+		_open_reward_choices()
+		return
+
 	hud.set_message("Wave clear. Build more or start the next wave.")
 
 
-func _on_build_tower_requested() -> void:
+func _on_build_tower_requested(tower_id: String) -> void:
 	if run_state.game_over or not run_state.game_started:
 		return
 
-	if run_state.gold < GameBalance.TOWER_COST:
-		hud.set_message("Not enough gold for another G'wizard tower.")
+	hud.hide_tower_tooltip()
+	if not run_state.owned_tower_ids.has(tower_id):
+		hud.set_message("That tower is not unlocked yet.")
 		return
 
+	var tower_cost := GameBalance.get_tower_cost(tower_id)
+	if run_state.gold < tower_cost:
+		hud.set_message("Not enough gold for that tower.")
+		return
+
+	selected_tower_id = tower_id
 	tower_placement.begin_placement(_get_tower_positions())
-	hud.set_message("Choose a green patch of land for the tower.")
+	var tower_config := GameBalance.get_tower_config(selected_tower_id)
+	hud.set_message("Place the %s on a green patch of land." % str(tower_config.get("name", "tower")))
 
 
 func _on_cancel_build_requested() -> void:
@@ -154,21 +172,23 @@ func _on_start_wave_requested() -> void:
 	_start_next_wave()
 
 
-func _on_tower_placement_confirmed(position: Vector3) -> void:
-	if run_state.gold < GameBalance.TOWER_COST:
-		hud.set_message("Not enough gold for another G'wizard tower.")
+func _on_tower_placement_confirmed(placement_position: Vector3) -> void:
+	var tower_cost := GameBalance.get_tower_cost(selected_tower_id)
+	if run_state.gold < tower_cost:
+		hud.set_message("Not enough gold for that tower.")
 		tower_placement.cancel_placement()
 		return
 
 	var tower := tower_scene.instantiate() as PrototypeTower
 	tower_container.add_child(tower)
-	tower.global_position = position
+	tower.setup(selected_tower_id, run_state.tower_modifiers)
+	tower.global_position = placement_position
 	tower.set_targets(enemies)
 	towers.append(tower)
-	run_state.gold -= GameBalance.TOWER_COST
+	run_state.gold -= tower_cost
 	tower_placement.cancel_placement()
 	_select_tower(tower)
-	hud.set_message("Tower placed. Build more or start the wave.")
+	hud.set_message("%s placed. Build more or start the wave." % tower.get_display_name())
 	_update_ui()
 
 
@@ -183,6 +203,7 @@ func _on_tower_placement_rejected(reason: String) -> void:
 
 func _on_placement_mode_changed(is_placing: bool) -> void:
 	hud.set_build_mode(is_placing)
+	_update_ui()
 
 
 func _on_upgrade_tower_requested() -> void:
@@ -205,6 +226,23 @@ func _on_upgrade_tower_requested() -> void:
 	_update_ui()
 
 
+func _on_reward_choice_selected(choice_index: int) -> void:
+	if choice_index < 0 or choice_index >= active_reward_choices.size():
+		return
+
+	var reward := active_reward_choices[choice_index]
+	run_state.complete_reward(reward)
+	_apply_tower_modifiers()
+	if not run_state.owned_tower_ids.has(selected_tower_id):
+		selected_tower_id = run_state.owned_tower_ids[0]
+
+	active_reward_choices.clear()
+	hud.hide_reward_choices()
+	get_tree().paused = false
+	hud.set_message("Reward chosen: %s." % str(reward.get("title", "Upgrade")))
+	_update_ui()
+
+
 func _on_menu_requested() -> void:
 	_open_pause_menu()
 
@@ -212,6 +250,7 @@ func _on_menu_requested() -> void:
 func _on_resume_requested() -> void:
 	get_tree().paused = false
 	hud.hide_menu()
+	_sync_camera_controls()
 
 
 func _on_new_game_requested() -> void:
@@ -236,6 +275,7 @@ func _game_over() -> void:
 	run_state.game_over = true
 	run_state.wave_active = false
 	tower_placement.cancel_placement()
+	hud.hide_tower_tooltip()
 	hud.set_message("Defeat. Press Enter or Space to try again.")
 	hud.show_main_menu("Defeat", false)
 	_update_ui()
@@ -251,17 +291,22 @@ func _restart_game() -> void:
 	enemies.clear()
 	towers.clear()
 	selected_tower = null
+	selected_tower_id = GameBalance.TOWER_GWIZARD
+	active_reward_choices.clear()
 	run_state.reset(run_state.game_started)
 	hud.set_message("Build a tower, then start the wave.")
 	hud.hide_menu()
+	hud.hide_reward_choices()
+	hud.hide_tower_tooltip()
 	_update_ui()
 
 
 func _update_ui() -> void:
-	hud.update_stats(run_state.wave, run_state.lives, run_state.score, run_state.gold, run_state.incoming_count(enemies.size()), towers.size())
-	hud.set_build_enabled(run_state.game_started and not run_state.game_over and run_state.gold >= GameBalance.TOWER_COST)
+	hud.update_stats(run_state.wave, run_state.lives, run_state.score, run_state.gold, run_state.xp, run_state.xp_to_next, run_state.incoming_count(enemies.size()), towers.size())
+	hud.update_build_options(run_state.owned_tower_ids, selected_tower_id, run_state.gold, run_state.game_started and not run_state.game_over, tower_placement.is_active)
 	hud.set_start_wave_enabled(run_state.game_started and not run_state.game_over and not run_state.wave_active and not towers.is_empty())
 	hud.update_selected_tower(selected_tower, run_state.gold)
+	_sync_camera_controls()
 
 
 func _get_tower_positions() -> Array[Vector3]:
@@ -302,4 +347,46 @@ func _open_pause_menu() -> void:
 		return
 
 	get_tree().paused = true
+	hud.hide_tower_tooltip()
 	hud.show_main_menu("Paused", true)
+	_sync_camera_controls()
+
+
+func _open_reward_choices() -> void:
+	active_reward_choices = GameBalance.get_reward_choices(run_state.owned_tower_ids, run_state.chosen_reward_ids, run_state.reward_level)
+	if active_reward_choices.is_empty():
+		return
+
+	get_tree().paused = true
+	hud.hide_tower_tooltip()
+	hud.show_reward_choices(active_reward_choices)
+	hud.set_message("Choose a reward to shape the run.")
+	_sync_camera_controls()
+
+
+func _apply_tower_modifiers() -> void:
+	for tower in towers:
+		if is_instance_valid(tower):
+			tower.apply_global_modifiers(run_state.tower_modifiers)
+
+
+func _update_hovered_tower() -> void:
+	if get_viewport().gui_get_hovered_control() != null:
+		hud.hide_world_tower_tooltip()
+		return
+
+	if tower_placement.is_active:
+		hud.hide_world_tower_tooltip()
+		return
+
+	var tower := _find_tower_at_mouse()
+	if tower == null:
+		hud.hide_tower_tooltip()
+		return
+
+	hud.show_tower_tooltip(tower.get_display_name(), tower.get_hover_description())
+
+
+func _sync_camera_controls() -> void:
+	var can_control_camera := run_state.game_started and not run_state.game_over and not run_state.reward_pending and not get_tree().paused and active_reward_choices.is_empty()
+	level_map.set_camera_controls_enabled(can_control_camera)

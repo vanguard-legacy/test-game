@@ -16,3 +16,14 @@ Track meaningful project changes here so future work has a clear history. Use sh
 - Stabilized HUD panel sizing so build controls do not resize the UI when entering or leaving tower placement mode.
 - Added multiple enemy archetypes, selectable tower upgrades, and a start/pause/restart menu overlay.
 - Refactored balance data, wave definitions, and run progress out of `main.gd` into focused helper classes.
+
+## 2026-05-17
+
+- Added strategy-style camera controls for edge/keyboard panning, mouse drag panning, mouse rotation, and zoom.
+- Added XP progression with three-choice reward drafts that can unlock tower types or apply global tower buffs.
+- Added three fixed build slots and new tower archetypes for long-range, slowing, and splash damage play.
+- Inverted vertical mouse camera tilt, disabled camera controls during overlays, and added cursor-following tower info tooltips.
+- Reused tower beam effects instead of allocating shot effects every attack, tightened validation so GDScript warnings fail the pass, and added a short combat smoke script.
+- Fixed reward choice selection so exhausted or even-sized reward pools cannot hang the game.
+- Changed middle-mouse camera panning to anchor on the terrain point under the cursor instead of using fixed pixel-speed movement.
+- Locked middle-mouse camera panning to a horizontal grab plane so terrain height changes do not cause accidental zoom-like motion.

@@ -1,6 +1,8 @@
 extends Node3D
 class_name PrototypeLevelMap
 
+const CameraController := preload("res://scripts/camera_controller.gd")
+
 const MAP_HALF_SIZE: float = 7.0
 const TERRAIN_CELLS: int = 56
 const PATH_CELLS: int = 36
@@ -11,6 +13,7 @@ const MAX_BUILD_SLOPE: float = 0.55
 var path_points: Array[Vector3] = []
 
 var active_camera: Camera3D
+var camera_controller: Node
 var navigation_graph := AStar3D.new()
 var start_point := Vector2(-6.2, -2.4)
 var exit_point := Vector2(6.1, 2.4)
@@ -36,6 +39,11 @@ func _ready() -> void:
 
 func get_active_camera() -> Camera3D:
 	return active_camera
+
+
+func set_camera_controls_enabled(is_enabled: bool) -> void:
+	if camera_controller != null and camera_controller.has_method("set_controls_enabled"):
+		camera_controller.set_controls_enabled(is_enabled)
 
 
 func get_start_position() -> Vector3:
@@ -73,9 +81,7 @@ func find_build_position(camera: Camera3D, mouse_position: Vector2, occupied_pos
 	if camera == null:
 		return {"has_hit": false, "is_valid": false, "reason": "No camera available for placement."}
 
-	var ray_origin := camera.project_ray_origin(mouse_position)
-	var ray_direction := camera.project_ray_normal(mouse_position)
-	var hit := _find_terrain_hit(ray_origin, ray_direction)
+	var hit := find_terrain_position(camera, mouse_position)
 	if not bool(hit.get("has_hit", false)):
 		return {"has_hit": false, "is_valid": false, "reason": "Aim at the terrain."}
 
@@ -90,6 +96,15 @@ func find_build_position(camera: Camera3D, mouse_position: Vector2, occupied_pos
 	}
 
 
+func find_terrain_position(camera: Camera3D, mouse_position: Vector2) -> Dictionary:
+	if camera == null:
+		return {"has_hit": false}
+
+	var ray_origin := camera.project_ray_origin(mouse_position)
+	var ray_direction := camera.project_ray_normal(mouse_position)
+	return _find_terrain_hit(ray_origin, ray_direction)
+
+
 func _build_world() -> void:
 	active_camera = Camera3D.new()
 	active_camera.name = "Camera"
@@ -97,6 +112,11 @@ func _build_world() -> void:
 	active_camera.rotation_degrees = Vector3(-54.0, 0.0, 0.0)
 	add_child(active_camera)
 	active_camera.current = true
+
+	camera_controller = CameraController.new()
+	camera_controller.name = "CameraController"
+	add_child(camera_controller)
+	camera_controller.setup(active_camera, MAP_HALF_SIZE, Callable(self, "find_terrain_position"))
 
 	var light := DirectionalLight3D.new()
 	light.name = "Sun"
@@ -319,8 +339,8 @@ func _get_blocked_reason(ground_point: Vector2, occupied_positions: Array[Vector
 	if _get_local_slope(ground_point) > MAX_BUILD_SLOPE:
 		return "Find flatter ground for the tower."
 
-	for position in occupied_positions:
-		var tower_point := Vector2(position.x, position.z)
+	for occupied_position in occupied_positions:
+		var tower_point := Vector2(occupied_position.x, occupied_position.z)
 		if tower_point.distance_to(ground_point) < MIN_TOWER_SPACING:
 			return "Towers need more space."
 

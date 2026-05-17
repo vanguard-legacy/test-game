@@ -86,6 +86,17 @@ text = "Gold"
 layout_mode = 2
 text = "150"
 
+[node name="XPStat" type="VBoxContainer" parent="Root/Layout/TopBar/Margin/StatsRow"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/XPStat"]
+layout_mode = 2
+text = "XP"
+
+[node name="Value" type="Label" parent="Root/Layout/TopBar/Margin/StatsRow/XPStat"]
+layout_mode = 2
+text = "0/42"
+
 [node name="ScoreStat" type="VBoxContainer" parent="Root/Layout/TopBar/Margin/StatsRow"]
 layout_mode = 2
 
@@ -139,7 +150,7 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
 [node name="BuildPanel" type="PanelContainer" parent="Root/Layout/BottomRow"]
-custom_minimum_size = Vector2(310, 194)
+custom_minimum_size = Vector2(310, 306)
 layout_mode = 2
 size_flags_vertical = 8
 
@@ -164,6 +175,18 @@ layout_mode = 2
 text = "G'wizard Tower"
 icon = ExtResource("2_tower")
 
+[node name="BuildTowerButton2" type="Button" parent="Root/Layout/BottomRow/BuildPanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Locked Tower Slot"
+icon = ExtResource("2_tower")
+
+[node name="BuildTowerButton3" type="Button" parent="Root/Layout/BottomRow/BuildPanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Locked Tower Slot"
+icon = ExtResource("2_tower")
+
 [node name="CancelBuildButton" type="Button" parent="Root/Layout/BottomRow/BuildPanel/Margin/Stack"]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
@@ -177,7 +200,7 @@ text = "Start Wave"
 icon = ExtResource("4_wave")
 
 [node name="UpgradePanel" type="PanelContainer" parent="Root/Layout/BottomRow"]
-custom_minimum_size = Vector2(310, 194)
+custom_minimum_size = Vector2(310, 306)
 layout_mode = 2
 size_flags_vertical = 8
 
@@ -215,7 +238,7 @@ text = "Upgrade Tower"
 icon = ExtResource("2_tower")
 
 [node name="MessagePanel" type="PanelContainer" parent="Root/Layout/BottomRow"]
-custom_minimum_size = Vector2(360, 194)
+custom_minimum_size = Vector2(360, 306)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 8
@@ -310,3 +333,101 @@ text = "Restart Run"
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "Quit"
+
+[node name="RewardOverlay" type="Control" parent="Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="Root/RewardOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.025, 0.022, 0.76)
+
+[node name="RewardPanel" type="PanelContainer" parent="Root/RewardOverlay"]
+custom_minimum_size = Vector2(800, 236)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -118.0
+offset_right = 400.0
+offset_bottom = 118.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="Root/RewardOverlay/RewardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 16
+
+[node name="Stack" type="VBoxContainer" parent="Root/RewardOverlay/RewardPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="RewardTitle" type="Label" parent="Root/RewardOverlay/RewardPanel/Margin/Stack"]
+layout_mode = 2
+text = "Choose a Reward"
+horizontal_alignment = 1
+
+[node name="RewardChoices" type="HBoxContainer" parent="Root/RewardOverlay/RewardPanel/Margin/Stack"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="RewardChoice1Button" type="Button" parent="Root/RewardOverlay/RewardPanel/Margin/Stack/RewardChoices"]
+custom_minimum_size = Vector2(240, 122)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Reward"
+
+[node name="RewardChoice2Button" type="Button" parent="Root/RewardOverlay/RewardPanel/Margin/Stack/RewardChoices"]
+custom_minimum_size = Vector2(240, 122)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Reward"
+
+[node name="RewardChoice3Button" type="Button" parent="Root/RewardOverlay/RewardPanel/Margin/Stack/RewardChoices"]
+custom_minimum_size = Vector2(240, 122)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Reward"
+
+[node name="TowerTooltip" type="PanelContainer" parent="Root"]
+visible = false
+z_index = 20
+custom_minimum_size = Vector2(286, 0)
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="Root/TowerTooltip"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="Stack" type="VBoxContainer" parent="Root/TowerTooltip/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TooltipTitle" type="Label" parent="Root/TowerTooltip/Margin/Stack"]
+layout_mode = 2
+text = "Tower"
+
+[node name="TooltipBody" type="Label" parent="Root/TowerTooltip/Margin/Stack"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+text = "Tower description."
+autowrap_mode = 3

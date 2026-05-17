@@ -1,0 +1,119 @@
+extends SceneTree
+
+const GameBalance := preload("res://scripts/game_balance.gd")
+
+const MAIN_SCENE: PackedScene = preload("res://scenes/main.tscn")
+const MAX_STEPS_PER_WAVE: int = 1200
+const SIMULATION_STEP: float = 0.1
+
+
+func _initialize() -> void:
+	_run_smoke.call_deferred()
+
+
+func _run_smoke() -> void:
+	print("STABILITY_SMOKE_START")
+	_verify_reward_choices()
+
+	var main := MAIN_SCENE.instantiate()
+	root.add_child(main)
+	await process_frame
+
+	print("STABILITY_SMOKE_NEW_GAME")
+	main._on_new_game_requested()
+	main.run_state.gold = 10000
+	main.run_state.owned_tower_ids.clear()
+	main.run_state.owned_tower_ids.append(GameBalance.TOWER_GWIZARD)
+	main.run_state.owned_tower_ids.append(GameBalance.TOWER_LONGBOW)
+	main.run_state.owned_tower_ids.append(GameBalance.TOWER_FROST)
+	main._update_ui()
+	await process_frame
+
+	_place_test_towers(main)
+
+	for _wave_index in range(2):
+		print("STABILITY_SMOKE_WAVE_START %d" % (_wave_index + 1))
+		main._on_start_wave_requested()
+		_run_wave_until_complete(main)
+		if main.active_reward_choices.size() > 0:
+			print("STABILITY_SMOKE_REWARD %d" % (_wave_index + 1))
+			main._on_reward_choice_selected(0)
+
+		if main.run_state.game_over:
+			print("STABILITY_SMOKE_GAME_OVER %d" % main.run_state.wave)
+			break
+
+		print("STABILITY_SMOKE_WAVE_DONE %d enemies=%d" % [main.run_state.wave, main.enemies.size()])
+
+	await process_frame
+	print("STABILITY_SMOKE_OK wave=%d score=%d gold=%d" % [main.run_state.wave, main.run_state.score, main.run_state.gold])
+	quit(0)
+
+
+func _verify_reward_choices() -> void:
+	print("STABILITY_SMOKE_REWARD_CHOICES")
+	var owned_tower_ids: Array[String] = [
+		GameBalance.TOWER_GWIZARD,
+		GameBalance.TOWER_LONGBOW,
+		GameBalance.TOWER_FROST,
+	]
+	var chosen_reward_ids: Array[String] = [
+		"sharper_runes",
+		"focus_lenses",
+		"quick_chanting",
+		"battle_scribes",
+		"haste_runes",
+	]
+
+	for reward_level in range(24):
+		var choices := GameBalance.get_reward_choices(owned_tower_ids, chosen_reward_ids, reward_level)
+		if choices.size() != 3:
+			push_error("Reward choice count was %d at level %d." % [choices.size(), reward_level])
+			quit(1)
+			return
+
+		for choice in choices:
+			if str(choice.get("id", "")).is_empty():
+				push_error("Reward choice had an empty id at level %d." % reward_level)
+				quit(1)
+				return
+
+
+func _place_test_towers(main: Node) -> void:
+	print("STABILITY_SMOKE_PLACE_TOWERS")
+	var placements: Array[Dictionary] = [
+		{"tower_id": GameBalance.TOWER_GWIZARD, "point": Vector2(-2.7, 0.2)},
+		{"tower_id": GameBalance.TOWER_GWIZARD, "point": Vector2(-0.5, 1.45)},
+		{"tower_id": GameBalance.TOWER_LONGBOW, "point": Vector2(1.4, -1.35)},
+		{"tower_id": GameBalance.TOWER_FROST, "point": Vector2(3.4, -0.85)},
+	]
+
+	for placement in placements:
+		var ground_point: Vector2 = placement["point"]
+		var tower_position: Vector3 = main.level_map._world_from_ground(ground_point, 0.62)
+		main.selected_tower_id = str(placement["tower_id"])
+		main._on_tower_placement_confirmed(tower_position)
+
+
+func _run_wave_until_complete(main: Node) -> void:
+	for _step_index in range(MAX_STEPS_PER_WAVE):
+		main._process(SIMULATION_STEP)
+		for tower in main.towers.duplicate():
+			if is_instance_valid(tower):
+				tower._process(SIMULATION_STEP)
+
+		for enemy in main.enemies.duplicate():
+			if is_instance_valid(enemy):
+				enemy._process(SIMULATION_STEP)
+
+		if main.active_reward_choices.size() > 0:
+			return
+
+		if not main.run_state.wave_active and main.enemies.is_empty():
+			return
+
+		if main.run_state.game_over:
+			return
+
+	push_error("Stability smoke wave timed out.")
+	quit(1)

@@ -49,6 +49,7 @@
 ```
 
 - If the script cannot find Godot, still inspect changed GDScript and scene files carefully and report that runtime validation was not available.
+- Treat Godot validation warnings as actionable lint feedback. Fix shadowed base-class properties, shadowed built-ins such as `range`, parser warnings, and script errors before calling the work complete.
 
 ## Codex Workflow
 
@@ -59,3 +60,9 @@
 - Keep changes tightly scoped to the requested behavior.
 - For visual or game-feel work, prefer small iterative changes that are easy to tune in the editor.
 - After edits, run the validation script when possible and summarize any remaining risk.
+- When validation reports GDScript warnings, rerun it after fixes and confirm the warning output is clean.
+- For combat, wave, tower, enemy, or reward changes, run the headless combat smoke when feasible:
+
+```powershell
+& "C:\Path\To\Godot.exe" --headless --path "C:\Users\Nova\Documents\test-game" --script res://tests/stability_smoke.gd
+```
