@@ -4,15 +4,16 @@ Track meaningful project changes here so future work has a clear history. Use sh
 
 Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjusted for this always-in-progress prototype. Keep tagged release sections in reverse chronological order. Version headings should match Git tags in the form `YYYY-MM-DD.N`.
 
-## [2026-05-19.4] - 2026-05-19
+## [2026-05-19.4]
 
 - Corrected the changelog/tag workflow so agent workflow changes are documented before release tagging.
+- Simplified tagged changelog headings so the date is not repeated outside the tag.
 
-## [2026-05-19.3] - 2026-05-19
+## [2026-05-19.3]
 
 - Documented that completed, validated agent work should be committed, pushed, date-tagged, and tag-pushed by default unless the user asks to hold changes locally.
 
-## [2026-05-19.2] - 2026-05-19
+## [2026-05-19.2]
 
 - Added a Godot command setup script that stores the active executable in `GODOT_EXE`, refreshes the `godot.cmd` shim, and keeps validation independent of versioned install folders.
 - Added procedural terrain and road shader materials with vertex color blending, altitude tinting, grain, road edge darkening, and extra terrain detail.

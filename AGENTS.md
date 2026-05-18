@@ -59,7 +59,7 @@
 - Keep `CHANGELOG.md` current when making meaningful gameplay, architecture, asset, UI, validation, or documentation changes.
 - Changelog entries should be dated, concise, written for future developers rather than as a transcript of the chat, and kept in reverse chronological order.
 - Version tags should use date-based names in the form `YYYY-MM-DD.N`, where `N` increments for each tag created on the same date.
-- When creating a version tag, use a matching changelog release heading such as `## [YYYY-MM-DD.N] - YYYY-MM-DD`, and keep the bottom link references in sync.
+- When creating a version tag, use a matching changelog release heading such as `## [YYYY-MM-DD.N]`, and keep the bottom link references in sync.
 - After completing and validating a cohesive change set, commit it, push it, create the next date-based version tag, and push that tag unless the user explicitly asks to hold changes locally.
 - Inspect the relevant scenes, scripts, resources, and `project.godot` before editing.
 - Keep changes tightly scoped to the requested behavior.
