@@ -2,9 +2,11 @@
 
 Track meaningful project changes here so future work has a clear history. Use short, dated entries and keep implementation detail high-level unless a detail affects future development.
 
-Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Keep the newest dated section at the top, above older history.
+Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Keep `Unreleased` at the top, then tagged releases in reverse chronological order. Version headings should match Git tags in the form `YYYY-MM-DD.N`.
 
-## 2026-05-19
+## [Unreleased]
+
+## [2026-05-19.1] - 2026-05-19
 
 - Added a Godot command setup script that stores the active executable in `GODOT_EXE`, refreshes the `godot.cmd` shim, and keeps validation independent of versioned install folders.
 - Added procedural terrain and road shader materials with vertex color blending, altitude tinting, grain, road edge darkening, and extra terrain detail.
@@ -17,6 +19,7 @@ Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Keep 
 - Expanded the Godot validation wrapper with recovery-mode project validation, project-local smoke logs, and an optional `-RunSmoke` test pass.
 - Reordered the changelog to follow Keep a Changelog-style reverse chronological sections.
 - Documented date-based version tags in the form `YYYY-MM-DD.N`.
+- Linked changelog release headings to matching Git version tags.
 
 ## 2026-05-18
 
@@ -53,3 +56,6 @@ Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Keep 
 - Stabilized HUD panel sizing so build controls do not resize the UI when entering or leaving tower placement mode.
 - Added multiple enemy archetypes, selectable tower upgrades, and a start/pause/restart menu overlay.
 - Refactored balance data, wave definitions, and run progress out of `main.gd` into focused helper classes.
+
+[Unreleased]: https://github.com/vanguard-legacy/test-game/compare/2026-05-19.1...master
+[2026-05-19.1]: https://github.com/vanguard-legacy/test-game/tree/2026-05-19.1
