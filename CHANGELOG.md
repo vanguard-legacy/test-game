@@ -4,6 +4,14 @@ Track meaningful project changes here so future work has a clear history. Use sh
 
 Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjusted for this always-in-progress prototype. Keep tagged release sections in reverse chronological order. Version headings should match Git tags in the form `YYYY-MM-DD.N`.
 
+## [2026-05-19.4] - 2026-05-19
+
+- Corrected the changelog/tag workflow so agent workflow changes are documented before release tagging.
+
+## [2026-05-19.3] - 2026-05-19
+
+- Documented that completed, validated agent work should be committed, pushed, date-tagged, and tag-pushed by default unless the user asks to hold changes locally.
+
 ## [2026-05-19.2] - 2026-05-19
 
 - Added a Godot command setup script that stores the active executable in `GODOT_EXE`, refreshes the `godot.cmd` shim, and keeps validation independent of versioned install folders.
@@ -56,4 +64,6 @@ Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjus
 - Added multiple enemy archetypes, selectable tower upgrades, and a start/pause/restart menu overlay.
 - Refactored balance data, wave definitions, and run progress out of `main.gd` into focused helper classes.
 
+[2026-05-19.4]: https://github.com/vanguard-legacy/test-game/tree/2026-05-19.4
+[2026-05-19.3]: https://github.com/vanguard-legacy/test-game/tree/2026-05-19.3
 [2026-05-19.2]: https://github.com/vanguard-legacy/test-game/tree/2026-05-19.2
