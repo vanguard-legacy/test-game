@@ -237,6 +237,12 @@ layout_mode = 2
 text = "Upgrade Tower"
 icon = ExtResource("2_tower")
 
+[node name="SellTowerButton" type="Button" parent="Root/Layout/BottomRow/UpgradePanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Sell Tower"
+icon = ExtResource("3_cancel")
+
 [node name="MessagePanel" type="PanelContainer" parent="Root/Layout/BottomRow"]
 custom_minimum_size = Vector2(360, 306)
 layout_mode = 2

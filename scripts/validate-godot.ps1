@@ -1,5 +1,6 @@
 param(
-    [string]$GodotPath = ""
+    [string]$GodotPath = "",
+    [switch]$ShowCommandOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -57,10 +58,37 @@ function Resolve-Godot {
 }
 
 $Godot = Resolve-Godot -ExplicitPath $GodotPath
+$ValidationDir = Join-Path $ProjectRoot ".godot\codex_validation"
+$ValidationLog = Join-Path $ValidationDir "godot-validation.log"
+New-Item -ItemType Directory -Path $ValidationDir -Force | Out-Null
+
+$ResolvedValidationDir = (Resolve-Path -LiteralPath $ValidationDir).Path
+$ResolvedProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
+if (-not $ResolvedValidationDir.StartsWith($ResolvedProjectRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "Validation log directory resolved outside the project: $ResolvedValidationDir"
+}
+
+$GodotArgs = @(
+    "--headless",
+    "--disable-crash-handler",
+    "--log-file", $ValidationLog,
+    "--path", $ProjectRoot,
+    "--quit-after", "2"
+)
+
 Write-Host "Using Godot: $Godot"
 Write-Host "Validating project: $ProjectRoot"
+Write-Host "Godot log: $ValidationLog"
 
-$Output = & $Godot --headless --path $ProjectRoot --quit 2>&1
+if ($ShowCommandOnly) {
+    Write-Host "Command: `"$Godot`" $($GodotArgs -join ' ')"
+    return
+}
+
+# Keep Godot's validation log inside the ignored project-local .godot folder.
+# The executable itself may still live outside the workspace, but the script does
+# not intentionally write validation output to global Godot user-data folders.
+$Output = & $Godot @GodotArgs 2>&1
 $ExitCode = $LASTEXITCODE
 $Output | ForEach-Object { Write-Host $_ }
 

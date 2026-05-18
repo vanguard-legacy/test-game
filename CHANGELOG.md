@@ -43,3 +43,6 @@ Track meaningful project changes here so future work has a clear history. Use sh
 - Added a Godot command setup script that stores the active executable in `GODOT_EXE`, refreshes the `godot.cmd` shim, and keeps validation independent of versioned install folders.
 - Added procedural terrain and road shader materials with vertex color blending, altitude tinting, grain, road edge darkening, and extra terrain detail.
 - Increased map visual contrast with darker terrain/road palettes, stronger shader shading, and lower sun intensity.
+- Added a selected-tower sell action that removes placed towers and refunds half of their build cost.
+- Improved tower selection with screen-space picking and a visible selected-tower range highlight.
+- Tightened Godot validation so logs are written to the ignored project-local `.godot/codex_validation` folder and the launch command can be inspected without running the engine.

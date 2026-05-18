@@ -29,6 +29,7 @@ func _run_smoke() -> void:
 	await process_frame
 
 	_place_test_towers(main)
+	_verify_sell_tower(main)
 
 	for _wave_index in range(2):
 		print("STABILITY_SMOKE_WAVE_START %d" % (_wave_index + 1))
@@ -107,6 +108,35 @@ func _place_test_towers(main: Node) -> void:
 			push_error("Tower terrain bonus was not applied.")
 			quit(1)
 			return
+
+
+func _verify_sell_tower(main: Node) -> void:
+	print("STABILITY_SMOKE_SELL_TOWER")
+	var gold_before: int = main.run_state.gold
+	var tower_count_before: int = main.towers.size()
+	var tower_to_sell: PrototypeTower = main.towers[0]
+	main._select_tower(tower_to_sell)
+	if not tower_to_sell.is_selected:
+		push_error("Selecting a tower did not enable its selection highlight.")
+		quit(1)
+		return
+
+	var refund: int = tower_to_sell.get_sell_value()
+	main._on_sell_tower_requested()
+	if main.towers.size() != tower_count_before - 1:
+		push_error("Selling a tower did not remove it from the tower list.")
+		quit(1)
+		return
+
+	if main.towers.has(tower_to_sell):
+		push_error("Selling a selected tower left that tower in the tower list.")
+		quit(1)
+		return
+
+	if main.run_state.gold != gold_before + refund:
+		push_error("Selling a tower refunded %d gold; expected %d." % [main.run_state.gold - gold_before, refund])
+		quit(1)
+		return
 
 
 func _run_wave_until_complete(main: Node) -> void:

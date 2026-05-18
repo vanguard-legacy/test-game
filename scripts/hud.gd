@@ -16,6 +16,7 @@ signal build_tower_requested(tower_id: String)
 signal cancel_build_requested
 signal start_wave_requested
 signal upgrade_tower_requested
+signal sell_tower_requested
 signal reward_choice_selected(choice_index: int)
 signal menu_requested
 signal resume_requested
@@ -49,6 +50,7 @@ signal quit_requested
 @onready var cancel_build_button: Button = $Root/Layout/BottomRow/BuildPanel/Margin/Stack/CancelBuildButton
 @onready var start_wave_button: Button = $Root/Layout/BottomRow/BuildPanel/Margin/Stack/StartWaveButton
 @onready var upgrade_tower_button: Button = $Root/Layout/BottomRow/UpgradePanel/Margin/Stack/UpgradeTowerButton
+@onready var sell_tower_button: Button = $Root/Layout/BottomRow/UpgradePanel/Margin/Stack/SellTowerButton
 @onready var menu_overlay: Control = $Root/MenuOverlay
 @onready var menu_panel: PanelContainer = $Root/MenuOverlay/MenuPanel
 @onready var menu_title: Label = $Root/MenuOverlay/MenuPanel/Margin/Stack/MenuTitle
@@ -100,6 +102,7 @@ func _connect_button_signals() -> void:
 	cancel_build_button.pressed.connect(_on_cancel_build_button_pressed)
 	start_wave_button.pressed.connect(_on_start_wave_button_pressed)
 	upgrade_tower_button.pressed.connect(_on_upgrade_tower_button_pressed)
+	sell_tower_button.pressed.connect(_on_sell_tower_button_pressed)
 	menu_button.pressed.connect(_on_menu_button_pressed)
 	resume_button.pressed.connect(_on_resume_button_pressed)
 	new_game_button.pressed.connect(_on_new_game_button_pressed)
@@ -181,12 +184,16 @@ func update_selected_tower(tower: PrototypeTower, gold: int) -> void:
 		tower_stats_label.text = "Click a placed tower to inspect it."
 		upgrade_tower_button.text = "Upgrade Tower"
 		upgrade_tower_button.disabled = true
+		sell_tower_button.text = "Sell Tower"
+		sell_tower_button.disabled = true
 		return
 
 	selected_tower_label.text = tower.get_display_name()
 	tower_stats_label.text = "Damage %.1f  Range %.1f\n%s" % [tower.damage, tower.attack_range, tower.get_upgrade_summary()]
 	upgrade_tower_button.text = tower.get_upgrade_summary()
 	upgrade_tower_button.disabled = not tower.can_upgrade() or gold < tower.get_upgrade_cost()
+	sell_tower_button.text = "Sell: %d gold" % tower.get_sell_value()
+	sell_tower_button.disabled = false
 
 
 func show_main_menu(title: String, can_resume: bool) -> void:
@@ -273,6 +280,10 @@ func _on_upgrade_tower_button_pressed() -> void:
 	upgrade_tower_requested.emit()
 
 
+func _on_sell_tower_button_pressed() -> void:
+	sell_tower_requested.emit()
+
+
 func _on_reward_choice_button_pressed(choice_index: int) -> void:
 	reward_choice_selected.emit(choice_index)
 
@@ -301,7 +312,7 @@ func _apply_styles() -> void:
 	for panel in [top_bar, build_panel, upgrade_panel, message_panel, menu_panel, reward_panel, tower_tooltip]:
 		panel.add_theme_stylebox_override("panel", PrototypeUiTheme.panel_style())
 
-	for button in [cancel_build_button, start_wave_button, upgrade_tower_button, menu_button, resume_button, new_game_button, restart_button, quit_button]:
+	for button in [cancel_build_button, start_wave_button, upgrade_tower_button, sell_tower_button, menu_button, resume_button, new_game_button, restart_button, quit_button]:
 		_style_button(button)
 
 	for button in tower_slot_buttons:

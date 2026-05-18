@@ -13,6 +13,7 @@ var targets: Array[PrototypeEnemy] = []
 var cooldown: float = 0.0
 var tower_id: String = GameBalance.TOWER_GWIZARD
 var tower_type_name: String = "G'wizard Tower"
+var build_cost: int = GameBalance.TOWER_COST
 var level: int = 1
 var base_range: float = GameBalance.TOWER_BASE_RANGE
 var base_damage: float = GameBalance.TOWER_BASE_DAMAGE
@@ -27,8 +28,11 @@ var slow_duration: float = 0.0
 var splash_radius: float = 0.0
 var global_modifiers: TowerModifiers = GameBalance.get_default_tower_modifiers()
 var terrain_bonus: TowerTerrainBonus = GameBalance.get_tower_terrain_bonus(0.0)
+var is_selected: bool = false
 var beam_visible_timer: float = 0.0
 var beam_mesh := ImmediateMesh.new()
+var range_material := PrototypeMaterials.transparent(Color(0.55, 0.80, 1.0, 0.12))
+var selected_range_material := PrototypeMaterials.transparent(Color(1.0, 0.84, 0.28, 0.28))
 
 @onready var focus_crystal: MeshInstance3D = $FocusCrystal
 @onready var tower_range: MeshInstance3D = $TowerRange
@@ -56,6 +60,7 @@ func _process(delta: float) -> void:
 
 func setup(new_tower_id: String, modifiers: TowerModifiers) -> void:
 	tower_id = new_tower_id
+	build_cost = GameBalance.get_tower_cost(tower_id)
 	global_modifiers = modifiers.duplicate_modifiers()
 	_apply_tower_definition(GameBalance.get_tower_definition(tower_id))
 
@@ -74,6 +79,12 @@ func apply_terrain_bonus(new_terrain_bonus: TowerTerrainBonus) -> void:
 	terrain_bonus = new_terrain_bonus
 	_recalculate_stats()
 	_update_upgrade_visuals()
+
+
+func set_selected(new_is_selected: bool) -> void:
+	is_selected = new_is_selected
+	tower_range.visible = is_selected
+	tower_range.material_override = selected_range_material if is_selected else range_material
 
 
 func _find_target() -> PrototypeEnemy:
@@ -123,11 +134,17 @@ func get_upgrade_summary() -> String:
 	return "Upgrade: %d gold" % get_upgrade_cost()
 
 
+func get_sell_value() -> int:
+	return int(floor(float(build_cost) * 0.5))
+
+
 func get_hover_description() -> String:
-	return "Damage %.1f  Range %.1f\nFires every %.2fs\n%s\n%s\n%s" % [damage, attack_range, fire_rate, _get_effect_summary(), terrain_bonus.get_summary(), get_upgrade_summary()]
+	return "Damage %.1f  Range %.1f\nFires every %.2fs\n%s\n%s\n%s\nSell refund: %d gold" % [damage, attack_range, fire_rate, _get_effect_summary(), terrain_bonus.get_summary(), get_upgrade_summary(), get_sell_value()]
 
 
 func _ready() -> void:
+	tower_range.material_override = range_material
+	tower_range.visible = false
 	_apply_tower_definition(GameBalance.get_tower_definition(tower_id))
 	_update_upgrade_visuals()
 

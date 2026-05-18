@@ -6,6 +6,9 @@ const RewardDefinition := preload("res://scripts/reward_definition.gd")
 const RunState := preload("res://scripts/run_state.gd")
 const BuildPlacementResult := preload("res://scripts/build_placement_result.gd")
 
+const TOWER_SCREEN_PICK_RADIUS: float = 52.0
+const TOWER_GROUND_PICK_RADIUS: float = 0.95
+
 # Scene coordinator for the prototype. Main wires scenes together and translates
 # user intent into gameplay actions, while balance, run state, HUD formatting,
 # and per-node behavior stay in focused scripts.
@@ -43,6 +46,7 @@ func _connect_scene_signals() -> void:
 	hud.cancel_build_requested.connect(_on_cancel_build_requested)
 	hud.start_wave_requested.connect(_on_start_wave_requested)
 	hud.upgrade_tower_requested.connect(_on_upgrade_tower_requested)
+	hud.sell_tower_requested.connect(_on_sell_tower_requested)
 	hud.reward_choice_selected.connect(_on_reward_choice_selected)
 	hud.menu_requested.connect(_on_menu_requested)
 	hud.resume_requested.connect(_on_resume_requested)
@@ -91,6 +95,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	var tower := _find_tower_at_mouse()
 	if tower != null:
 		_select_tower(tower)
+	else:
+		_clear_selected_tower()
 
 
 func _start_next_wave() -> void:
@@ -263,6 +269,23 @@ func _on_upgrade_tower_requested() -> void:
 	_update_ui()
 
 
+func _on_sell_tower_requested() -> void:
+	if selected_tower == null or not is_instance_valid(selected_tower):
+		hud.set_message("Select a tower to sell.")
+		return
+
+	var sold_tower := selected_tower
+	var refund := sold_tower.get_sell_value()
+	var sold_name := sold_tower.get_display_name()
+	towers.erase(sold_tower)
+	_clear_selected_tower()
+	run_state.gold += refund
+	hud.hide_tower_tooltip()
+	sold_tower.queue_free()
+	hud.set_message("%s sold for %d gold." % [sold_name, refund])
+	_update_ui()
+
+
 func _on_reward_choice_selected(choice_index: int) -> void:
 	if choice_index < 0 or choice_index >= active_reward_choices.size():
 		return
@@ -372,8 +395,22 @@ func _get_tower_positions() -> Array[Vector3]:
 
 
 func _select_tower(tower: PrototypeTower) -> void:
+	if selected_tower != null and is_instance_valid(selected_tower):
+		selected_tower.set_selected(false)
+
 	selected_tower = tower
+	if selected_tower != null and is_instance_valid(selected_tower):
+		selected_tower.set_selected(true)
+
 	hud.update_selected_tower(selected_tower, run_state.gold)
+
+
+func _clear_selected_tower() -> void:
+	if selected_tower != null and is_instance_valid(selected_tower):
+		selected_tower.set_selected(false)
+
+	selected_tower = null
+	hud.update_selected_tower(null, run_state.gold)
 
 
 func _find_tower_at_mouse() -> PrototypeTower:
@@ -382,6 +419,10 @@ func _find_tower_at_mouse() -> PrototypeTower:
 		return null
 
 	var mouse_position := get_viewport().get_mouse_position()
+	var screen_picked_tower := _find_tower_near_screen_position(camera, mouse_position)
+	if screen_picked_tower != null:
+		return screen_picked_tower
+
 	var terrain_hit := level_map.find_terrain_position(camera, mouse_position)
 	if not terrain_hit.has_hit:
 		return null
@@ -390,10 +431,30 @@ func _find_tower_at_mouse() -> PrototypeTower:
 	var hit_point := Vector2(hit_position.x, hit_position.z)
 	for tower in towers:
 		var tower_point := Vector2(tower.global_position.x, tower.global_position.z)
-		if tower_point.distance_to(hit_point) <= 0.85:
+		if tower_point.distance_to(hit_point) <= TOWER_GROUND_PICK_RADIUS:
 			return tower
 
 	return null
+
+
+func _find_tower_near_screen_position(camera: Camera3D, mouse_position: Vector2) -> PrototypeTower:
+	var closest_tower: PrototypeTower = null
+	var closest_distance := TOWER_SCREEN_PICK_RADIUS
+	for tower in towers:
+		if not is_instance_valid(tower):
+			continue
+
+		var pick_position := tower.global_position + Vector3(0.0, 0.75, 0.0)
+		if camera.is_position_behind(pick_position):
+			continue
+
+		var screen_position := camera.unproject_position(pick_position)
+		var screen_distance := screen_position.distance_to(mouse_position)
+		if screen_distance <= closest_distance:
+			closest_distance = screen_distance
+			closest_tower = tower
+
+	return closest_tower
 
 
 func _open_pause_menu() -> void:
