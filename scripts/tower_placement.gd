@@ -10,6 +10,7 @@ signal placement_confirmed(position: Vector3)
 signal placement_cancelled
 signal placement_rejected(reason: String)
 signal placement_mode_changed(is_active: bool)
+signal placement_updated(result: BuildPlacementResult)
 
 const PREVIEW_SURFACE_OFFSET: float = 0.56
 
@@ -93,6 +94,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _update_preview() -> void:
 	var mouse_position := get_viewport().get_mouse_position()
 	current_result = level_map.find_build_position(active_camera, mouse_position, occupied_positions)
+	placement_updated.emit(current_result)
 	preview.visible = current_result.has_hit
 
 	if not current_result.has_hit:

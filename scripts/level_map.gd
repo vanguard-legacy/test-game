@@ -3,16 +3,18 @@ class_name PrototypeLevelMap
 
 const BuildPlacementResult := preload("res://scripts/build_placement_result.gd")
 const CameraController := preload("res://scripts/camera_controller.gd")
+const GameBalance := preload("res://scripts/game_balance.gd")
 const RoadInfo := preload("res://scripts/road_info.gd")
 const TerrainQuery := preload("res://scripts/terrain_query.gd")
+const TowerTerrainBonus := preload("res://scripts/tower_terrain_bonus.gd")
 
 # Procedural prototype map. This node owns terrain height, road shape, pathing,
 # build validation, and camera setup so gameplay code can ask higher-level
 # questions such as "where can I place?" or "how do enemies reach the exit?"
 
-const MAP_HALF_SIZE: float = 7.0
-const TERRAIN_CELLS: int = 56
-const PATH_CELLS: int = 36
+const MAP_HALF_SIZE: float = 11.0
+const TERRAIN_CELLS: int = 88
+const PATH_CELLS: int = 58
 const TOWER_ORIGIN_OFFSET: float = 0.62
 const MIN_TOWER_SPACING: float = 1.25
 const MAX_BUILD_SLOPE: float = 0.55
@@ -22,16 +24,24 @@ var path_points: Array[Vector3] = []
 var active_camera: Camera3D
 var camera_controller: Node
 var navigation_graph := AStar3D.new()
-var start_point := Vector2(-6.2, -2.4)
-var exit_point := Vector2(6.1, 2.4)
+# The route intentionally changes elevation and width several times so tower
+# placement has real tactical tradeoffs instead of one obvious lane.
+var start_point := Vector2(-10.0, -6.4)
+var exit_point := Vector2(10.0, 6.8)
 var road_points: Array[Vector2] = [
-	Vector2(-6.2, -2.4),
-	Vector2(-3.2, -2.25),
-	Vector2(-1.25, -0.75),
-	Vector2(0.8, 0.05),
-	Vector2(2.8, 0.35),
-	Vector2(4.8, 1.8),
-	Vector2(6.1, 2.4),
+	Vector2(-10.0, -6.4),
+	Vector2(-7.8, -5.9),
+	Vector2(-6.2, -3.5),
+	Vector2(-7.2, -0.8),
+	Vector2(-4.0, 1.2),
+	Vector2(-1.8, -1.9),
+	Vector2(0.9, -2.2),
+	Vector2(3.0, 0.8),
+	Vector2(1.2, 3.8),
+	Vector2(4.5, 5.2),
+	Vector2(7.0, 3.2),
+	Vector2(8.6, 5.7),
+	Vector2(10.0, 6.8),
 ]
 
 var terrain_material := PrototypeMaterials.standard(Color(0.30, 0.52, 0.29))
@@ -111,10 +121,14 @@ func find_terrain_position(camera: Camera3D, mouse_position: Vector2) -> Terrain
 	return _find_terrain_hit(ray_origin, ray_direction)
 
 
+func get_tower_terrain_bonus(build_position: Vector3) -> TowerTerrainBonus:
+	return GameBalance.get_tower_terrain_bonus(build_position.y - TOWER_ORIGIN_OFFSET)
+
+
 func _build_world() -> void:
 	active_camera = Camera3D.new()
 	active_camera.name = "Camera"
-	active_camera.position = Vector3(0.0, 10.5, 10.5)
+	active_camera.position = Vector3(0.0, 13.5, 13.5)
 	active_camera.rotation_degrees = Vector3(-54.0, 0.0, 0.0)
 	add_child(active_camera)
 	active_camera.current = true
@@ -239,7 +253,11 @@ func _world_from_ground(point: Vector2, y_offset: float = 0.0) -> Vector3:
 
 
 func _height_at(point: Vector2) -> float:
-	var rolling_height: float = 0.18 * sin(point.x * 0.75) + 0.12 * cos(point.y * 0.9) + 0.05 * sin((point.x + point.y) * 1.2)
+	var ridge_height := 0.34 * sin(point.x * 0.42) + 0.24 * cos(point.y * 0.58) + 0.14 * sin((point.x - point.y) * 0.36)
+	var hill_a := 1.0 - clampf(point.distance_to(Vector2(-5.6, 3.6)) / 5.8, 0.0, 1.0)
+	var hill_b := 1.0 - clampf(point.distance_to(Vector2(5.7, -2.6)) / 5.2, 0.0, 1.0)
+	var valley := 1.0 - clampf(point.distance_to(Vector2(0.4, 0.6)) / 4.5, 0.0, 1.0)
+	var rolling_height: float = ridge_height + smoothstep(0.0, 1.0, hill_a) * 0.8 + smoothstep(0.0, 1.0, hill_b) * 0.55 - smoothstep(0.0, 1.0, valley) * 0.42
 	var road_info := _get_road_info(point)
 	var progress := road_info.progress
 	var road_height: float = _road_height(progress)
@@ -249,17 +267,24 @@ func _height_at(point: Vector2) -> float:
 
 
 func _road_height(progress: float) -> float:
-	if progress < 0.42:
-		return lerp(0.05, 1.2, smoothstep(0.0, 1.0, progress / 0.42))
+	if progress < 0.22:
+		return lerp(-0.05, 0.72, smoothstep(0.0, 1.0, progress / 0.22))
 
-	if progress < 0.68:
-		return 1.2 + 0.06 * sin(progress * TAU * 2.0)
+	if progress < 0.47:
+		return lerp(0.72, -0.22, smoothstep(0.0, 1.0, (progress - 0.22) / 0.25))
 
-	return lerp(1.2, 0.16, smoothstep(0.0, 1.0, (progress - 0.68) / 0.32))
+	if progress < 0.72:
+		return lerp(-0.22, 1.46, smoothstep(0.0, 1.0, (progress - 0.47) / 0.25)) + 0.08 * sin(progress * TAU * 4.0)
+
+	return lerp(1.46, 0.36, smoothstep(0.0, 1.0, (progress - 0.72) / 0.28))
 
 
 func _road_half_width(progress: float) -> float:
-	return lerp(0.52, 1.05, smoothstep(0.0, 1.0, progress))
+	var base_width: float = lerp(0.72, 1.18, smoothstep(0.0, 1.0, progress))
+	var choke_a: float = 0.34 * smoothstep(0.0, 1.0, 1.0 - absf(progress - 0.30) / 0.08)
+	var choke_b: float = 0.28 * smoothstep(0.0, 1.0, 1.0 - absf(progress - 0.69) / 0.10)
+	var plaza: float = 0.46 * smoothstep(0.0, 1.0, 1.0 - absf(progress - 0.52) / 0.12)
+	return maxf(0.46, base_width - choke_a - choke_b + plaza)
 
 
 func _is_road(point: Vector2) -> bool:

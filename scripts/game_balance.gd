@@ -4,6 +4,7 @@ extends RefCounted
 const TowerDefinition := preload("res://scripts/tower_definition.gd")
 const EnemyDefinition := preload("res://scripts/enemy_definition.gd")
 const RewardDefinition := preload("res://scripts/reward_definition.gd")
+const TowerTerrainBonus := preload("res://scripts/tower_terrain_bonus.gd")
 const WaveDefinition := preload("res://scripts/wave_definition.gd")
 const TowerModifiers := preload("res://scripts/tower_modifiers.gd")
 
@@ -26,6 +27,12 @@ const TOWER_DAMAGE_STEP: float = 0.75
 const TOWER_RANGE_STEP: float = 0.75
 const TOWER_FIRE_RATE_STEP: float = 0.07
 const TOWER_MIN_FIRE_RATE: float = 0.22
+const TOWER_HEIGHT_DAMAGE_PER_METER: float = 0.12
+const TOWER_HEIGHT_RANGE_PER_METER: float = 0.55
+const TOWER_MIN_HEIGHT_DAMAGE_MULTIPLIER: float = 0.92
+const TOWER_MAX_HEIGHT_DAMAGE_MULTIPLIER: float = 1.25
+const TOWER_MIN_HEIGHT_RANGE_BONUS: float = -0.35
+const TOWER_MAX_HEIGHT_RANGE_BONUS: float = 1.6
 
 const TOWER_GWIZARD: String = "gwizard"
 const TOWER_LONGBOW: String = "longbow_keep"
@@ -122,6 +129,20 @@ static func get_tower_definition(tower_id: String) -> TowerDefinition:
 
 static func get_tower_cost(tower_id: String) -> int:
 	return get_tower_definition(tower_id).cost
+
+
+static func get_tower_terrain_bonus(terrain_height: float) -> TowerTerrainBonus:
+	var damage_multiplier := clampf(
+		1.0 + terrain_height * TOWER_HEIGHT_DAMAGE_PER_METER,
+		TOWER_MIN_HEIGHT_DAMAGE_MULTIPLIER,
+		TOWER_MAX_HEIGHT_DAMAGE_MULTIPLIER
+	)
+	var range_bonus := clampf(
+		terrain_height * TOWER_HEIGHT_RANGE_PER_METER,
+		TOWER_MIN_HEIGHT_RANGE_BONUS,
+		TOWER_MAX_HEIGHT_RANGE_BONUS
+	)
+	return TowerTerrainBonus.new(terrain_height, damage_multiplier, range_bonus, _get_height_bonus_label(terrain_height))
 
 
 static func get_xp_required_for_level(level: int) -> int:
@@ -343,6 +364,16 @@ static func _make_gold_reward(reward_level: int, index: int) -> RewardDefinition
 		"description": "+75 gold for more building.",
 		"gold": 75,
 	})
+
+
+static func _get_height_bonus_label(terrain_height: float) -> String:
+	if terrain_height >= 0.9:
+		return "High ground advantage"
+
+	if terrain_height <= -0.25:
+		return "Low ground penalty"
+
+	return "Level ground"
 
 
 static func _pick_reward_choices(candidates: Array[RewardDefinition], reward_level: int) -> Array[RewardDefinition]:

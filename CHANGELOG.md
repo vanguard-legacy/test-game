@@ -31,3 +31,13 @@ Track meaningful project changes here so future work has a clear history. Use sh
 - Added onboarding comments to core prototype scripts and documented the current architecture boundaries for future contributors and agents.
 - Changed the command message panel into a stable scrollable event log so players can review run messages.
 - Prevented camera mouse controls from responding while the cursor is over HUD controls, including the command log scrollbar.
+
+## 2026-05-18
+
+- Added terrain-height tower bonuses so high ground increases tower damage and range while low ground applies a small penalty.
+- Added placement hover tooltips that preview the terrain bonus before a tower is placed.
+- Expanded the prototype map with a larger terrain footprint, a longer winding route, more varied elevation, and changing road widths.
+
+## 2026-05-19
+
+- Added a Godot command setup script that stores the active executable in `GODOT_EXE`, refreshes the `godot.cmd` shim, and keeps validation independent of versioned install folders.

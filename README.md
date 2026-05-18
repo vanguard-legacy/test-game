@@ -8,8 +8,9 @@ See `DESIGN.md` for the current design brief and `CHANGELOG.md` for project hist
 
 Open the project in Godot and run the main scene. The first prototype is intentionally tiny:
 
-- A generated 3D terrain map with low ground, high ground, and a wider exit road.
-- A procedural ramped road that climbs over the terrain and descends toward the exit.
+- A larger generated 3D terrain map with low ground, ridges, valleys, and wider build zones.
+- A longer procedural road with multiple bends, climbs, descents, chokepoints, and wider sections.
+- Terrain-height bonuses that reward placing towers on high ground and warn about low ground.
 - Player-placed G'wizard towers.
 - Strategy-style camera controls for panning, rotating, and zooming around the terrain.
 - Multiple enemy types that ask the map for an auto-generated route to the exit.
@@ -42,6 +43,20 @@ Codex project guidance lives in `AGENTS.md`.
 Meaningful changes should be recorded in `CHANGELOG.md`.
 
 Architecture rule of thumb: keep `main.gd` as the scene coordinator, keep balance numbers in `game_balance.gd`, keep mutable run values in `run_state.gd`, and prefer typed payload objects over long parameter lists or cross-script dictionaries.
+
+### Godot Command Setup
+
+Use the setup script whenever installing or switching Godot versions:
+
+```powershell
+./scripts/set-godot.ps1 -GodotPath "C:\Path\To\Godot.exe"
+```
+
+It stores the executable path in the user-level `GODOT_EXE` environment variable, writes a stable `godot.cmd` shim to `~/bin`, and makes sure `~/bin` is on the user `Path`. After that, new terminals can use:
+
+```powershell
+godot --version
+```
 
 Run a basic Godot project validation with:
 

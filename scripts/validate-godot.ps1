@@ -22,6 +22,19 @@ function Resolve-Godot {
         return (Resolve-Path -LiteralPath $ExplicitPath).Path
     }
 
+    $ConfiguredGodot = $env:GODOT_EXE
+    if (-not $ConfiguredGodot) {
+        $ConfiguredGodot = [Environment]::GetEnvironmentVariable("GODOT_EXE", "User")
+    }
+
+    if ($ConfiguredGodot) {
+        if (-not (Test-Path -LiteralPath $ConfiguredGodot)) {
+            throw "GODOT_EXE is set but Godot was not found at $ConfiguredGodot"
+        }
+
+        return (Resolve-Path -LiteralPath $ConfiguredGodot).Path
+    }
+
     foreach ($CommandName in @("godot", "godot4", "Godot")) {
         $Command = Get-Command $CommandName -ErrorAction SilentlyContinue
         if ($Command) {

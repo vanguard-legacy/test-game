@@ -2,7 +2,7 @@ extends SceneTree
 
 const GameBalance := preload("res://scripts/game_balance.gd")
 const MAIN_SCENE: PackedScene = preload("res://scenes/main.tscn")
-const MAX_STEPS_PER_WAVE: int = 1200
+const MAX_STEPS_PER_WAVE: int = 2200
 const SIMULATION_STEP: float = 0.1
 
 
@@ -85,12 +85,16 @@ func _place_test_towers(main: Node) -> void:
 		GameBalance.TOWER_GWIZARD,
 		GameBalance.TOWER_LONGBOW,
 		GameBalance.TOWER_FROST,
+		GameBalance.TOWER_LONGBOW,
+		GameBalance.TOWER_FROST,
 	]
 	var ground_points: Array[Vector2] = [
-		Vector2(-2.7, 0.2),
-		Vector2(-0.5, 1.45),
-		Vector2(1.4, -1.35),
-		Vector2(3.4, -0.85),
+		Vector2(-7.0, -3.9),
+		Vector2(-6.2, 0.4),
+		Vector2(-2.5, 0.8),
+		Vector2(1.3, -0.8),
+		Vector2(3.0, 4.2),
+		Vector2(7.5, 4.7),
 	]
 
 	for index in range(tower_ids.size()):
@@ -98,6 +102,11 @@ func _place_test_towers(main: Node) -> void:
 		var tower_position: Vector3 = main.level_map._world_from_ground(ground_point, 0.62)
 		main.selected_tower_id = tower_ids[index]
 		main._on_tower_placement_confirmed(tower_position)
+		var tower = main.towers[-1]
+		if tower.terrain_bonus == null:
+			push_error("Tower terrain bonus was not applied.")
+			quit(1)
+			return
 
 
 func _run_wave_until_complete(main: Node) -> void:

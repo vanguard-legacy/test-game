@@ -4,6 +4,7 @@ const GameBalance := preload("res://scripts/game_balance.gd")
 const HudViewModel := preload("res://scripts/hud_view_model.gd")
 const RewardDefinition := preload("res://scripts/reward_definition.gd")
 const RunState := preload("res://scripts/run_state.gd")
+const BuildPlacementResult := preload("res://scripts/build_placement_result.gd")
 
 # Scene coordinator for the prototype. Main wires scenes together and translates
 # user intent into gameplay actions, while balance, run state, HUD formatting,
@@ -37,6 +38,7 @@ func _connect_scene_signals() -> void:
 	tower_placement.placement_cancelled.connect(_on_tower_placement_cancelled)
 	tower_placement.placement_rejected.connect(_on_tower_placement_rejected)
 	tower_placement.placement_mode_changed.connect(_on_placement_mode_changed)
+	tower_placement.placement_updated.connect(_on_tower_placement_updated)
 	hud.build_tower_requested.connect(_on_build_tower_requested)
 	hud.cancel_build_requested.connect(_on_cancel_build_requested)
 	hud.start_wave_requested.connect(_on_start_wave_requested)
@@ -200,6 +202,7 @@ func _on_tower_placement_confirmed(placement_position: Vector3) -> void:
 	tower_container.add_child(tower)
 	tower.setup(selected_tower_id, run_state.tower_modifiers)
 	tower.global_position = placement_position
+	tower.apply_terrain_bonus(level_map.get_tower_terrain_bonus(placement_position))
 	tower.set_targets(enemies)
 	towers.append(tower)
 	run_state.gold -= tower_cost
@@ -210,6 +213,7 @@ func _on_tower_placement_confirmed(placement_position: Vector3) -> void:
 
 
 func _on_tower_placement_cancelled() -> void:
+	hud.hide_tower_tooltip()
 	if not run_state.game_over:
 		hud.set_message("Build cancelled.")
 
@@ -220,7 +224,23 @@ func _on_tower_placement_rejected(reason: String) -> void:
 
 func _on_placement_mode_changed(is_placing: bool) -> void:
 	hud.set_build_mode(is_placing)
+	if not is_placing:
+		hud.hide_tower_tooltip()
 	_update_ui()
+
+
+func _on_tower_placement_updated(result: BuildPlacementResult) -> void:
+	if not result.has_hit or not result.is_valid:
+		hud.hide_tower_tooltip()
+		return
+
+	var tower_definition := GameBalance.get_tower_definition(selected_tower_id)
+	var terrain_bonus := level_map.get_tower_terrain_bonus(result.position)
+	hud.show_tower_tooltip(
+		"%s placement" % tower_definition.short_name,
+		"%s\n%s" % [tower_definition.description, terrain_bonus.get_summary()],
+		"placement"
+	)
 
 
 func _on_upgrade_tower_requested() -> void:

@@ -4,6 +4,7 @@ class_name PrototypeTower
 const GameBalance := preload("res://scripts/game_balance.gd")
 const TowerDefinition := preload("res://scripts/tower_definition.gd")
 const TowerModifiers := preload("res://scripts/tower_modifiers.gd")
+const TowerTerrainBonus := preload("res://scripts/tower_terrain_bonus.gd")
 
 # Tower combat actor. Definitions provide base identity and visuals; local level
 # and run-wide modifiers combine into the live combat stats recalculated here.
@@ -25,6 +26,7 @@ var slow_multiplier: float = 1.0
 var slow_duration: float = 0.0
 var splash_radius: float = 0.0
 var global_modifiers: TowerModifiers = GameBalance.get_default_tower_modifiers()
+var terrain_bonus: TowerTerrainBonus = GameBalance.get_tower_terrain_bonus(0.0)
 var beam_visible_timer: float = 0.0
 var beam_mesh := ImmediateMesh.new()
 
@@ -64,6 +66,12 @@ func set_targets(new_targets: Array[PrototypeEnemy]) -> void:
 
 func apply_global_modifiers(modifiers: TowerModifiers) -> void:
 	global_modifiers = modifiers.duplicate_modifiers()
+	_recalculate_stats()
+	_update_upgrade_visuals()
+
+
+func apply_terrain_bonus(new_terrain_bonus: TowerTerrainBonus) -> void:
+	terrain_bonus = new_terrain_bonus
 	_recalculate_stats()
 	_update_upgrade_visuals()
 
@@ -116,7 +124,7 @@ func get_upgrade_summary() -> String:
 
 
 func get_hover_description() -> String:
-	return "Damage %.1f  Range %.1f\nFires every %.2fs\n%s\n%s" % [damage, attack_range, fire_rate, _get_effect_summary(), get_upgrade_summary()]
+	return "Damage %.1f  Range %.1f\nFires every %.2fs\n%s\n%s\n%s" % [damage, attack_range, fire_rate, _get_effect_summary(), terrain_bonus.get_summary(), get_upgrade_summary()]
 
 
 func _ready() -> void:
@@ -172,8 +180,8 @@ func _apply_tower_definition(definition: TowerDefinition) -> void:
 
 
 func _recalculate_stats() -> void:
-	damage = (base_damage + float(level - 1) * GameBalance.TOWER_DAMAGE_STEP) * global_modifiers.damage_multiplier
-	attack_range = base_range + float(level - 1) * GameBalance.TOWER_RANGE_STEP + global_modifiers.range_bonus
+	damage = (base_damage + float(level - 1) * GameBalance.TOWER_DAMAGE_STEP) * global_modifiers.damage_multiplier * terrain_bonus.damage_multiplier
+	attack_range = base_range + float(level - 1) * GameBalance.TOWER_RANGE_STEP + global_modifiers.range_bonus + terrain_bonus.range_bonus
 	fire_rate = maxf(GameBalance.TOWER_MIN_FIRE_RATE, (base_fire_rate - float(level - 1) * GameBalance.TOWER_FIRE_RATE_STEP) * global_modifiers.fire_rate_multiplier)
 
 

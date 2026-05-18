@@ -233,7 +233,7 @@ func hide_tower_tooltip() -> void:
 
 
 func hide_world_tower_tooltip() -> void:
-	if tower_tooltip_source == "world":
+	if tower_tooltip_source == "world" or tower_tooltip_source == "placement":
 		hide_tower_tooltip()
 
 
