@@ -4,10 +4,18 @@ Track meaningful project changes here so future work has a clear history. Use sh
 
 Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjusted for this always-in-progress prototype. Keep tagged release sections in reverse chronological order. Version headings should match Git tags in the form `YYYY-MM-DD.N`.
 
+## [2026-05-19.6]
+
+- Corrected the release workflow so the changelog includes the next tag section before the commit is tagged.
+- Added the missing `2026-05-19.5` changelog section for the previous release.
+
+## [2026-05-19.5]
+
+- Simplified tagged changelog headings so the date is not repeated outside the tag.
+
 ## [2026-05-19.4]
 
 - Corrected the changelog/tag workflow so agent workflow changes are documented before release tagging.
-- Simplified tagged changelog headings so the date is not repeated outside the tag.
 
 ## [2026-05-19.3]
 
@@ -65,6 +73,8 @@ Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjus
 - Added multiple enemy archetypes, selectable tower upgrades, and a start/pause/restart menu overlay.
 - Refactored balance data, wave definitions, and run progress out of `main.gd` into focused helper classes.
 
+[2026-05-19.6]: https://github.com/vanguard-legacy/test-game/tree/2026-05-19.6
+[2026-05-19.5]: https://github.com/vanguard-legacy/test-game/tree/2026-05-19.5
 [2026-05-19.4]: https://github.com/vanguard-legacy/test-game/tree/2026-05-19.4
 [2026-05-19.3]: https://github.com/vanguard-legacy/test-game/tree/2026-05-19.3
 [2026-05-19.2]: https://github.com/vanguard-legacy/test-game/tree/2026-05-19.2
