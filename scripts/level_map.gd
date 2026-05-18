@@ -44,8 +44,8 @@ var road_points: Array[Vector2] = [
 	Vector2(10.0, 6.8),
 ]
 
-var terrain_material := PrototypeMaterials.standard(Color(0.30, 0.52, 0.29))
-var road_material := PrototypeMaterials.standard(Color(0.56, 0.44, 0.28))
+var terrain_material := PrototypeMaterials.terrain()
+var road_material := PrototypeMaterials.road()
 
 
 func _ready() -> void:
@@ -141,13 +141,14 @@ func _build_world() -> void:
 	var light := DirectionalLight3D.new()
 	light.name = "Sun"
 	light.rotation_degrees = Vector3(-55.0, -35.0, 0.0)
-	light.light_energy = 2.4
+	light.light_energy = 1.85
+	light.shadow_enabled = true
 	add_child(light)
 
 	_add_terrain_mesh()
 	_add_road_mesh()
-	_add_marker("StartMarker", get_start_position(), Color(0.42, 0.78, 0.44))
-	_add_marker("ExitGate", get_exit_position(), Color(0.28, 0.22, 0.18))
+	_add_marker("StartMarker", get_start_position(), Color(0.25, 0.58, 0.28))
+	_add_marker("ExitGate", get_exit_position(), Color(0.16, 0.12, 0.10))
 
 
 func _add_terrain_mesh() -> void:
@@ -162,7 +163,7 @@ func _add_terrain_mesh() -> void:
 			var z0 := -MAP_HALF_SIZE + float(z_index) * step
 			var x1 := x0 + step
 			var z1 := z0 + step
-			_add_quad(surface, _world_from_ground(Vector2(x0, z0)), _world_from_ground(Vector2(x1, z0)), _world_from_ground(Vector2(x1, z1)), _world_from_ground(Vector2(x0, z1)))
+			_add_terrain_quad(surface, Vector2(x0, z0), Vector2(x1, z0), Vector2(x1, z1), Vector2(x0, z1))
 
 	surface.generate_normals()
 	var mesh_instance := MeshInstance3D.new()
@@ -191,7 +192,7 @@ func _add_road_mesh() -> void:
 			var z0 := center.y - step * 0.5
 			var x1 := center.x + step * 0.5
 			var z1 := center.y + step * 0.5
-			_add_quad(surface, _world_from_ground(Vector2(x0, z0), 0.035), _world_from_ground(Vector2(x1, z0), 0.035), _world_from_ground(Vector2(x1, z1), 0.035), _world_from_ground(Vector2(x0, z1), 0.035))
+			_add_road_quad(surface, Vector2(x0, z0), Vector2(x1, z0), Vector2(x1, z1), Vector2(x0, z1))
 
 	surface.generate_normals()
 	var mesh_instance := MeshInstance3D.new()
@@ -225,13 +226,27 @@ func _build_navigation_graph() -> void:
 					navigation_graph.connect_points(point_id, neighbor_id)
 
 
-func _add_quad(surface: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3) -> void:
-	surface.add_vertex(a)
-	surface.add_vertex(b)
-	surface.add_vertex(c)
-	surface.add_vertex(a)
-	surface.add_vertex(c)
-	surface.add_vertex(d)
+func _add_terrain_quad(surface: SurfaceTool, a: Vector2, b: Vector2, c: Vector2, d: Vector2) -> void:
+	_add_colored_vertex(surface, _world_from_ground(a), _terrain_color_at(a))
+	_add_colored_vertex(surface, _world_from_ground(b), _terrain_color_at(b))
+	_add_colored_vertex(surface, _world_from_ground(c), _terrain_color_at(c))
+	_add_colored_vertex(surface, _world_from_ground(a), _terrain_color_at(a))
+	_add_colored_vertex(surface, _world_from_ground(c), _terrain_color_at(c))
+	_add_colored_vertex(surface, _world_from_ground(d), _terrain_color_at(d))
+
+
+func _add_road_quad(surface: SurfaceTool, a: Vector2, b: Vector2, c: Vector2, d: Vector2) -> void:
+	_add_colored_vertex(surface, _world_from_ground(a, 0.04), _road_color_at(a))
+	_add_colored_vertex(surface, _world_from_ground(b, 0.04), _road_color_at(b))
+	_add_colored_vertex(surface, _world_from_ground(c, 0.04), _road_color_at(c))
+	_add_colored_vertex(surface, _world_from_ground(a, 0.04), _road_color_at(a))
+	_add_colored_vertex(surface, _world_from_ground(c, 0.04), _road_color_at(c))
+	_add_colored_vertex(surface, _world_from_ground(d, 0.04), _road_color_at(d))
+
+
+func _add_colored_vertex(surface: SurfaceTool, vertex: Vector3, color: Color) -> void:
+	surface.set_color(color)
+	surface.add_vertex(vertex)
 
 
 func _add_marker(node_name: String, marker_position: Vector3, color: Color) -> void:
@@ -253,17 +268,40 @@ func _world_from_ground(point: Vector2, y_offset: float = 0.0) -> Vector3:
 
 
 func _height_at(point: Vector2) -> float:
-	var ridge_height := 0.34 * sin(point.x * 0.42) + 0.24 * cos(point.y * 0.58) + 0.14 * sin((point.x - point.y) * 0.36)
-	var hill_a := 1.0 - clampf(point.distance_to(Vector2(-5.6, 3.6)) / 5.8, 0.0, 1.0)
-	var hill_b := 1.0 - clampf(point.distance_to(Vector2(5.7, -2.6)) / 5.2, 0.0, 1.0)
-	var valley := 1.0 - clampf(point.distance_to(Vector2(0.4, 0.6)) / 4.5, 0.0, 1.0)
-	var rolling_height: float = ridge_height + smoothstep(0.0, 1.0, hill_a) * 0.8 + smoothstep(0.0, 1.0, hill_b) * 0.55 - smoothstep(0.0, 1.0, valley) * 0.42
+	var ridge_height: float = 0.34 * sin(point.x * 0.42) + 0.24 * cos(point.y * 0.58) + 0.14 * sin((point.x - point.y) * 0.36)
+	var hill_a: float = 1.0 - clampf(point.distance_to(Vector2(-5.6, 3.6)) / 5.8, 0.0, 1.0)
+	var hill_b: float = 1.0 - clampf(point.distance_to(Vector2(5.7, -2.6)) / 5.2, 0.0, 1.0)
+	var terrace: float = 1.0 - clampf(point.distance_to(Vector2(-0.8, 6.2)) / 4.8, 0.0, 1.0)
+	var valley: float = 1.0 - clampf(point.distance_to(Vector2(0.4, 0.6)) / 4.5, 0.0, 1.0)
+	var detail: float = 0.08 * sin(point.x * 1.35 + point.y * 0.42) + 0.06 * cos(point.y * 1.22 - point.x * 0.28)
+	var rolling_height: float = ridge_height + smoothstep(0.0, 1.0, hill_a) * 0.8 + smoothstep(0.0, 1.0, hill_b) * 0.55 + smoothstep(0.0, 1.0, terrace) * 0.38 - smoothstep(0.0, 1.0, valley) * 0.42 + detail
 	var road_info := _get_road_info(point)
 	var progress := road_info.progress
 	var road_height: float = _road_height(progress)
 	var road_blend: float = 1.0 - clampf(road_info.distance / (_road_half_width(progress) + 1.15), 0.0, 1.0)
 	road_blend = smoothstep(0.0, 1.0, road_blend)
 	return lerp(rolling_height, road_height, road_blend)
+
+
+func _terrain_color_at(point: Vector2) -> Color:
+	var height := _height_at(point)
+	var slope := _get_local_slope(point)
+	var lowland := Color(0.12, 0.27, 0.14)
+	var meadow := Color(0.20, 0.39, 0.18)
+	var high_grass := Color(0.30, 0.36, 0.20)
+	var stone := Color(0.28, 0.28, 0.23)
+	var color := lowland.lerp(meadow, smoothstep(-0.35, 0.7, height))
+	color = color.lerp(high_grass, smoothstep(0.55, 1.25, height) * 0.52)
+	color = color.lerp(stone, smoothstep(0.36, 0.86, slope))
+	return color
+
+
+func _road_color_at(point: Vector2) -> Color:
+	var road_info := _get_road_info(point)
+	var edge_ratio := clampf(road_info.distance / maxf(0.01, _road_half_width(road_info.progress)), 0.0, 1.0)
+	var center := Color(0.36, 0.27, 0.17)
+	var edge := Color(0.20, 0.16, 0.11)
+	return center.lerp(edge, smoothstep(0.48, 1.0, edge_ratio))
 
 
 func _road_height(progress: float) -> float:

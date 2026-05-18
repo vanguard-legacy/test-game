@@ -10,6 +10,7 @@ Open the project in Godot and run the main scene. The first prototype is intenti
 
 - A larger generated 3D terrain map with low ground, ridges, valleys, and wider build zones.
 - A longer procedural road with multiple bends, climbs, descents, chokepoints, and wider sections.
+- Procedural terrain and road materials with height tinting, edge darkening, and subtle surface grain.
 - Terrain-height bonuses that reward placing towers on high ground and warn about low ground.
 - Player-placed G'wizard towers.
 - Strategy-style camera controls for panning, rotating, and zooming around the terrain.
