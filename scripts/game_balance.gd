@@ -232,24 +232,23 @@ static func get_tower_upgrade_cost(level: int) -> int:
 
 static func _get_scripted_waves() -> Array[WaveDefinition]:
 	return [
-		WaveDefinition.from_values("Wave 1: gobbelins on the road.", _repeat_enemy(ENEMY_GOBBELIN, 5), 0.95),
-		WaveDefinition.from_values("Wave 2: a wider gobbelin push.", _repeat_enemy(ENEMY_GOBBELIN, 7), 0.85),
+		WaveDefinition.from_values("Wave 1: gobbelins on the road.", _repeat_enemy(ENEMY_GOBBELIN, 12), 0.62),
+		WaveDefinition.from_values("Wave 2: a wider gobbelin push.", _repeat_enemy(ENEMY_GOBBELIN, 18), 0.55),
 		WaveDefinition.from_values(
 			"Wave 3: gnuruks join the sprint.",
-			[
+			_repeat_pattern([
 				ENEMY_GOBBELIN,
 				ENEMY_GOBBELIN,
 				ENEMY_GNURUK,
 				ENEMY_GOBBELIN,
+				ENEMY_GOBBELIN,
 				ENEMY_GNURUK,
-				ENEMY_GOBBELIN,
-				ENEMY_GOBBELIN,
-			],
-			0.78
+			], 3),
+			0.50
 		),
 		WaveDefinition.from_values(
 			"Wave 4: fast feet and shielded heads.",
-			[
+			_repeat_pattern([
 				ENEMY_GOBBELIN,
 				ENEMY_GNURUK,
 				ENEMY_GOBBELIN,
@@ -258,29 +257,30 @@ static func _get_scripted_waves() -> Array[WaveDefinition]:
 				ENEMY_GOBBELIN,
 				ENEMY_GNURUK,
 				ENEMY_GOBBELIN,
-			],
-			0.72
+			], 3),
+			0.46
 		),
 		WaveDefinition.from_values(
 			"Wave 5: the first gnogre lumbers in.",
-			[
+			_repeat_pattern([
 				ENEMY_GOBBELIN,
 				ENEMY_GNURUK,
 				ENEMY_GOBBELIN,
 				ENEMY_GNOGRE,
 				ENEMY_GOBBELIN,
+				ENEMY_GOBBELIN,
 				ENEMY_GNURUK,
 				ENEMY_GOBBELIN,
 				ENEMY_GNOGRE,
-			],
-			0.68
+			], 3),
+			0.42
 		),
 	]
 
 
 static func _make_scaling_wave(wave: int) -> WaveDefinition:
 	var enemy_ids: Array[String] = []
-	var count := 6 + wave
+	var count := 12 + wave * 3
 	for index in range(count):
 		if index % 6 == 5:
 			enemy_ids.append(ENEMY_GNOGRE)
@@ -292,7 +292,7 @@ static func _make_scaling_wave(wave: int) -> WaveDefinition:
 	return WaveDefinition.from_values(
 		"Wave %d: mixed raiders." % wave,
 		enemy_ids,
-		maxf(0.4, 0.78 - float(wave - 5) * 0.035)
+		maxf(0.26, 0.46 - float(wave - 5) * 0.025)
 	)
 
 
@@ -300,6 +300,14 @@ static func _repeat_enemy(enemy_id: String, count: int) -> Array[String]:
 	var enemy_ids: Array[String] = []
 	for _index in range(count):
 		enemy_ids.append(enemy_id)
+
+	return enemy_ids
+
+
+static func _repeat_pattern(pattern: Array[String], times: int) -> Array[String]:
+	var enemy_ids: Array[String] = []
+	for _repeat_index in range(times):
+		enemy_ids.append_array(pattern)
 
 	return enemy_ids
 

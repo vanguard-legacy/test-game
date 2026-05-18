@@ -2,20 +2,27 @@
 
 Track meaningful project changes here so future work has a clear history. Use short, dated entries and keep implementation detail high-level unless a detail affects future development.
 
-## 2026-05-16
+Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Keep the newest dated section at the top, above older history.
 
-- Added Codex project guidance in `AGENTS.md`.
-- Added the game design brief in `DESIGN.md`.
-- Created a simple Godot validation script at `scripts/validate-godot.ps1`.
-- Built the first playable prototype with waves, lives, score, gold, enemies, towers, and player tower placement.
-- Split the prototype into focused Godot scenes for the map, enemies, towers, HUD, and round coordination.
-- Added first-pass generated scene assets for the Gobbelin enemy and G'wizard tower.
-- Added SVG UI icons and a container-based HUD with shared UI styling.
-- Replaced box terrain with procedural terrain, a ramped road, terrain-aware tower placement, and A* enemy routing.
-- Verified project validation and a brief headless scene run with Godot 4.6.2.
-- Stabilized HUD panel sizing so build controls do not resize the UI when entering or leaving tower placement mode.
-- Added multiple enemy archetypes, selectable tower upgrades, and a start/pause/restart menu overlay.
-- Refactored balance data, wave definitions, and run progress out of `main.gd` into focused helper classes.
+## 2026-05-19
+
+- Added a Godot command setup script that stores the active executable in `GODOT_EXE`, refreshes the `godot.cmd` shim, and keeps validation independent of versioned install folders.
+- Added procedural terrain and road shader materials with vertex color blending, altitude tinting, grain, road edge darkening, and extra terrain detail.
+- Increased map visual contrast with darker terrain/road palettes, stronger shader shading, and lower sun intensity.
+- Added a selected-tower sell action that removes placed towers and refunds half of their build cost.
+- Improved tower selection with screen-space picking and a visible selected-tower range highlight.
+- Tightened Godot validation so logs are written to the ignored project-local `.godot/codex_validation` folder and the launch command can be inspected without running the engine.
+- Added 1x/2x/4x game speed controls, kept keyboard/edge camera panning stable while time is scaled, and increased enemy counts across scripted and scaling waves.
+- Introduced a small gameplay clock boundary so HUD speed buttons emit intent while the simulation side owns valid speed values and `Engine.time_scale`.
+- Expanded the Godot validation wrapper with recovery-mode project validation, project-local smoke logs, and an optional `-RunSmoke` test pass.
+- Reordered the changelog to follow Keep a Changelog-style reverse chronological sections.
+- Documented date-based version tags in the form `YYYY-MM-DD.N`.
+
+## 2026-05-18
+
+- Added terrain-height tower bonuses so high ground increases tower damage and range while low ground applies a small penalty.
+- Added placement hover tooltips that preview the terrain bonus before a tower is placed.
+- Expanded the prototype map with a larger terrain footprint, a longer winding route, more varied elevation, and changing road widths.
 
 ## 2026-05-17
 
@@ -32,17 +39,17 @@ Track meaningful project changes here so future work has a clear history. Use sh
 - Changed the command message panel into a stable scrollable event log so players can review run messages.
 - Prevented camera mouse controls from responding while the cursor is over HUD controls, including the command log scrollbar.
 
-## 2026-05-18
+## 2026-05-16
 
-- Added terrain-height tower bonuses so high ground increases tower damage and range while low ground applies a small penalty.
-- Added placement hover tooltips that preview the terrain bonus before a tower is placed.
-- Expanded the prototype map with a larger terrain footprint, a longer winding route, more varied elevation, and changing road widths.
-
-## 2026-05-19
-
-- Added a Godot command setup script that stores the active executable in `GODOT_EXE`, refreshes the `godot.cmd` shim, and keeps validation independent of versioned install folders.
-- Added procedural terrain and road shader materials with vertex color blending, altitude tinting, grain, road edge darkening, and extra terrain detail.
-- Increased map visual contrast with darker terrain/road palettes, stronger shader shading, and lower sun intensity.
-- Added a selected-tower sell action that removes placed towers and refunds half of their build cost.
-- Improved tower selection with screen-space picking and a visible selected-tower range highlight.
-- Tightened Godot validation so logs are written to the ignored project-local `.godot/codex_validation` folder and the launch command can be inspected without running the engine.
+- Added Codex project guidance in `AGENTS.md`.
+- Added the game design brief in `DESIGN.md`.
+- Created a simple Godot validation script at `scripts/validate-godot.ps1`.
+- Built the first playable prototype with waves, lives, score, gold, enemies, towers, and player tower placement.
+- Split the prototype into focused Godot scenes for the map, enemies, towers, HUD, and round coordination.
+- Added first-pass generated scene assets for the Gobbelin enemy and G'wizard tower.
+- Added SVG UI icons and a container-based HUD with shared UI styling.
+- Replaced box terrain with procedural terrain, a ramped road, terrain-aware tower placement, and A* enemy routing.
+- Verified project validation and a brief headless scene run with Godot 4.6.2.
+- Stabilized HUD panel sizing so build controls do not resize the UI when entering or leaving tower placement mode.
+- Added multiple enemy archetypes, selectable tower upgrades, and a start/pause/restart menu overlay.
+- Refactored balance data, wave definitions, and run progress out of `main.gd` into focused helper classes.

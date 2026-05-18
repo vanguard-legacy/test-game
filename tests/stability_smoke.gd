@@ -28,19 +28,24 @@ func _run_smoke() -> void:
 	main._update_ui()
 	await process_frame
 
+	_verify_game_speed(main)
 	_place_test_towers(main)
 	_verify_sell_tower(main)
 
 	for _wave_index in range(2):
 		print("STABILITY_SMOKE_WAVE_START %d" % (_wave_index + 1))
 		main._on_start_wave_requested()
-		_run_wave_until_complete(main)
-		if main.active_reward_choices.size() > 0:
-			print("STABILITY_SMOKE_REWARD %d" % (_wave_index + 1))
-			main._on_reward_choice_selected(0)
+		while main.run_state.wave_active or not main.enemies.is_empty() or main.active_reward_choices.size() > 0:
+			_run_wave_until_complete(main)
+			if main.active_reward_choices.size() > 0:
+				print("STABILITY_SMOKE_REWARD %d" % (_wave_index + 1))
+				main._on_reward_choice_selected(0)
+
+			if main.run_state.game_over:
+				print("STABILITY_SMOKE_GAME_OVER %d" % main.run_state.wave)
+				break
 
 		if main.run_state.game_over:
-			print("STABILITY_SMOKE_GAME_OVER %d" % main.run_state.wave)
 			break
 
 		print("STABILITY_SMOKE_WAVE_DONE %d enemies=%d" % [main.run_state.wave, main.enemies.size()])
@@ -108,6 +113,21 @@ func _place_test_towers(main: Node) -> void:
 			push_error("Tower terrain bonus was not applied.")
 			quit(1)
 			return
+
+
+func _verify_game_speed(main: Node) -> void:
+	print("STABILITY_SMOKE_GAME_SPEED")
+	main._on_game_speed_requested(4.0)
+	if not is_equal_approx(Engine.time_scale, 4.0):
+		push_error("Game speed control did not set Engine.time_scale to 4x.")
+		quit(1)
+		return
+
+	main._on_game_speed_requested(1.0)
+	if not is_equal_approx(Engine.time_scale, 1.0):
+		push_error("Game speed control did not return Engine.time_scale to 1x.")
+		quit(1)
+		return
 
 
 func _verify_sell_tower(main: Node) -> void:

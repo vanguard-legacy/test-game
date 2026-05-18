@@ -54,7 +54,7 @@ func _process(delta: float) -> void:
 	if camera == null or not controls_enabled or get_tree().paused:
 		return
 
-	_pan_from_keyboard_and_edges(delta)
+	_pan_from_keyboard_and_edges(_get_unscaled_delta(delta))
 	_apply_camera_transform()
 
 
@@ -217,3 +217,10 @@ func _get_cursor_on_pan_plane(mouse_position: Vector2) -> TerrainQuery:
 		return TerrainQuery.new()
 
 	return TerrainQuery.new(true, ray_origin + ray_direction * distance_to_plane)
+
+
+func _get_unscaled_delta(delta: float) -> float:
+	if is_zero_approx(Engine.time_scale):
+		return delta
+
+	return delta / Engine.time_scale

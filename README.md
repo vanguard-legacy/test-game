@@ -44,6 +44,9 @@ Codex project guidance lives in `AGENTS.md`.
 Meaningful changes should be recorded in `CHANGELOG.md`.
 
 Architecture rule of thumb: keep `main.gd` as the scene coordinator, keep balance numbers in `game_balance.gd`, keep mutable run values in `run_state.gd`, and prefer typed payload objects over long parameter lists or cross-script dictionaries.
+Treat gameplay state as the simulation core and HUD code as a presentation/input client. Godot scene-tree work should stay on the main thread unless a system is deliberately designed around thread-safe data handoff.
+
+Version tags use date-based names: `YYYY-MM-DD.N`, incrementing `N` for each tag created on the same date.
 
 ### Godot Command Setup
 
@@ -74,5 +77,7 @@ If Godot is not on `PATH`, pass the executable path:
 For combat-loop changes, run the short headless smoke:
 
 ```powershell
-& "C:\Path\To\Godot.exe" --headless --path "C:\Users\Nova\Documents\test-game" --script res://tests/stability_smoke.gd
+./scripts/validate-godot.ps1 -RunSmoke
 ```
+
+To inspect the exact commands without launching Godot, add `-ShowCommandOnly`.

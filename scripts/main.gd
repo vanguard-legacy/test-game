@@ -5,6 +5,7 @@ const HudViewModel := preload("res://scripts/hud_view_model.gd")
 const RewardDefinition := preload("res://scripts/reward_definition.gd")
 const RunState := preload("res://scripts/run_state.gd")
 const BuildPlacementResult := preload("res://scripts/build_placement_result.gd")
+const GameClock := preload("res://scripts/game_clock.gd")
 
 const TOWER_SCREEN_PICK_RADIUS: float = 52.0
 const TOWER_GROUND_PICK_RADIUS: float = 0.95
@@ -28,9 +29,11 @@ var run_state: RunState = RunState.new()
 var selected_tower: PrototypeTower = null
 var selected_tower_id: String = GameBalance.TOWER_GWIZARD
 var active_reward_choices: Array[RewardDefinition] = []
+var game_clock: GameClock = GameClock.new()
 
 
 func _ready() -> void:
+	game_clock.restore_engine_default()
 	_connect_scene_signals()
 	_show_initial_menu()
 
@@ -53,6 +56,7 @@ func _connect_scene_signals() -> void:
 	hud.new_game_requested.connect(_on_new_game_requested)
 	hud.restart_requested.connect(_on_restart_requested)
 	hud.quit_requested.connect(_on_quit_requested)
+	hud.game_speed_requested.connect(_on_game_speed_requested)
 
 
 func _show_initial_menu() -> void:
@@ -328,7 +332,12 @@ func _on_restart_requested() -> void:
 
 
 func _on_quit_requested() -> void:
+	game_clock.restore_engine_default()
 	get_tree().quit()
+
+
+func _on_game_speed_requested(requested_speed: float) -> void:
+	_set_game_speed(requested_speed)
 
 
 func _game_over() -> void:
@@ -353,6 +362,7 @@ func _restart_game() -> void:
 	selected_tower = null
 	selected_tower_id = GameBalance.TOWER_GWIZARD
 	active_reward_choices.clear()
+	game_clock.reset()
 	run_state.reset(run_state.game_started)
 	hud.clear_message_log()
 	hud.set_message("Build a tower, then start the wave.")
@@ -383,6 +393,7 @@ func _make_hud_view_model() -> HudViewModel:
 	view_model.can_build = run_state.game_started and not run_state.game_over
 	view_model.is_building = tower_placement.is_active
 	view_model.can_start_wave = run_state.game_started and not run_state.game_over and not run_state.wave_active and not towers.is_empty()
+	view_model.game_speed = game_clock.speed
 	return view_model
 
 
@@ -505,3 +516,14 @@ func _update_hovered_tower() -> void:
 func _sync_camera_controls() -> void:
 	var can_control_camera := run_state.game_started and not run_state.game_over and not run_state.reward_pending and not get_tree().paused and active_reward_choices.is_empty()
 	level_map.set_camera_controls_enabled(can_control_camera)
+
+
+func _set_game_speed(requested_speed: float, announce_change: bool = true) -> void:
+	if not game_clock.set_speed(requested_speed):
+		return
+
+	if announce_change:
+		hud.set_message("Game speed set to %dx." % int(game_clock.speed))
+
+	if is_node_ready():
+		_update_ui()

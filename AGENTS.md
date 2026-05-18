@@ -57,7 +57,8 @@
 
 - Read `DESIGN.md` before making gameplay, UI, art-direction, level, enemy, tower, score, or progression changes.
 - Keep `CHANGELOG.md` current when making meaningful gameplay, architecture, asset, UI, validation, or documentation changes.
-- Changelog entries should be dated, concise, and written for future developers rather than as a transcript of the chat.
+- Changelog entries should be dated, concise, written for future developers rather than as a transcript of the chat, and kept in reverse chronological order with the newest dated section at the top.
+- Version tags should use date-based names in the form `YYYY-MM-DD.N`, where `N` increments for each tag created on the same date.
 - Inspect the relevant scenes, scripts, resources, and `project.godot` before editing.
 - Keep changes tightly scoped to the requested behavior.
 - For visual or game-feel work, prefer small iterative changes that are easy to tune in the editor.
@@ -66,5 +67,11 @@
 - For combat, wave, tower, enemy, or reward changes, run the headless combat smoke when feasible:
 
 ```powershell
-& "C:\Path\To\Godot.exe" --headless --path "C:\Users\Nova\Documents\test-game" --script res://tests/stability_smoke.gd
+./scripts/validate-godot.ps1 -RunSmoke
+```
+
+- If Godot process launches are unstable on the current machine, first inspect the safe validation commands without running the engine:
+
+```powershell
+./scripts/validate-godot.ps1 -RunSmoke -ShowCommandOnly
 ```
