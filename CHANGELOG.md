@@ -2,7 +2,8 @@
 
 Track meaningful project changes here so future work has a clear history. Use short, dated entries and keep implementation detail high-level unless a detail affects future development.
 
-Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjusted for this always-in-progress prototype. Keep tagged release sections in reverse chronological order. Version headings should match Git tags in the form `YYYY-MM-DD.N`.
+Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjusted for this always-in-progress prototype.
+Keep dated sections in reverse chronological order. Version headings should point to the latest git tag for each day in the form `YYYY-MM-DD.N`.
 
 ## [2026-05-19]
 
