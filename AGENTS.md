@@ -41,13 +41,13 @@
 - Preferred local validation command:
 
 ```powershell
-./scripts/validate-godot.ps1
+./tools/validate-godot.ps1
 ```
 
 - If Godot is not on `PATH`, pass the executable explicitly:
 
 ```powershell
-./scripts/validate-godot.ps1 -GodotPath "C:\Path\To\Godot.exe"
+./tools/validate-godot.ps1 -GodotPath "C:\Path\To\Godot.exe"
 ```
 
 - If the script cannot find Godot, still inspect changed GDScript and scene files carefully and report that runtime validation was not available.
@@ -69,11 +69,11 @@
 - For combat, wave, tower, enemy, or reward changes, run the headless combat smoke when feasible:
 
 ```powershell
-./scripts/validate-godot.ps1 -RunSmoke
+./tools/validate-godot.ps1 -RunSmoke
 ```
 
 - If Godot process launches are unstable on the current machine, first inspect the safe validation commands without running the engine:
 
 ```powershell
-./scripts/validate-godot.ps1 -RunSmoke -ShowCommandOnly
+./tools/validate-godot.ps1 -RunSmoke -ShowCommandOnly
 ```

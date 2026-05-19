@@ -53,7 +53,7 @@ Version tags use date-based names: `YYYY-MM-DD.N`, incrementing `N` for each tag
 Use the setup script whenever installing or switching Godot versions:
 
 ```powershell
-./scripts/set-godot.ps1 -GodotPath "C:\Path\To\Godot.exe"
+./tools/set-godot.ps1 -GodotPath "C:\Path\To\Godot.exe"
 ```
 
 It stores the executable path in the user-level `GODOT_EXE` environment variable, writes a stable `godot.cmd` shim to `~/bin`, and makes sure `~/bin` is on the user `Path`. After that, new terminals can use:
@@ -65,19 +65,19 @@ godot --version
 Run a basic Godot project validation with:
 
 ```powershell
-./scripts/validate-godot.ps1
+./tools/validate-godot.ps1
 ```
 
 If Godot is not on `PATH`, pass the executable path:
 
 ```powershell
-./scripts/validate-godot.ps1 -GodotPath "C:\Path\To\Godot.exe"
+./tools/validate-godot.ps1 -GodotPath "C:\Path\To\Godot.exe"
 ```
 
 For combat-loop changes, run the short headless smoke:
 
 ```powershell
-./scripts/validate-godot.ps1 -RunSmoke
+./tools/validate-godot.ps1 -RunSmoke
 ```
 
 To inspect the exact commands without launching Godot, add `-ShowCommandOnly`.
