@@ -62,4 +62,4 @@ Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjus
 - Added multiple enemy archetypes, selectable tower upgrades, and a start/pause/restart menu overlay.
 - Refactored balance data, wave definitions, and run progress out of `main.gd` into focused helper classes.
 
-[2026-05-19]: https://github.com/vanguard-legacy/test-game/tree/2026-05-19.7
+[2026-05-19]: https://github.com/vanguard-legacy/test-game/tree/2026-19-05.7
