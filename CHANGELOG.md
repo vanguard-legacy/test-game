@@ -4,7 +4,7 @@ Track meaningful project changes here so future work has a clear history. Use sh
 
 Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjusted for this always-in-progress prototype. Keep tagged release sections in reverse chronological order. Version headings should match Git tags in the form `YYYY-MM-DD.N`.
 
-## [2026-05-19.6]
+## [2026-05-19.7]
 
 - Moved devlopment tools into dedicated `tools` directory.
 
