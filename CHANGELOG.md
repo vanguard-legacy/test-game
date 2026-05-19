@@ -6,6 +6,10 @@ Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjus
 
 ## [2026-05-19.6]
 
+- Moved devlopment tools into dedicated `tools` directory.
+
+## [2026-05-19.6]
+
 - Corrected the release workflow so the changelog includes the next tag section before the commit is tagged.
 - Added the missing `2026-05-19.5` changelog section for the previous release.
 
