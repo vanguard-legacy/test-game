@@ -21,10 +21,17 @@ const ROAD_POINT_COUNT: int = 12
 const TOWER_ORIGIN_OFFSET: float = 0.62
 const MIN_TOWER_SPACING: float = 1.25
 const MAX_BUILD_SLOPE: float = 0.55
+const FOG_DRIFT_RADIUS: float = 0.75
+const FOG_BREATH_AMOUNT: float = 0.08
 
 @export var map_seed: int = 20260522
 
 var path_points: Array[Vector3] = []
+var fog_bank_nodes: Array[Node3D] = []
+var fog_bank_origins: Array[Vector3] = []
+var fog_bank_drift_vectors: Array[Vector3] = []
+var fog_bank_base_scales: Array[Vector3] = []
+var fog_bank_phases: Array[float] = []
 
 var active_camera: Camera3D
 var camera_controller: Node
@@ -43,7 +50,11 @@ var fog_bank_material := Materials.fog_bank()
 
 
 func _ready() -> void:
-	pass
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
+
+func _process(_delta: float) -> void:
+	_animate_fog_banks()
 
 
 func generate_map(seed: int, progress_callback: Callable = Callable()) -> void:
@@ -76,6 +87,11 @@ func _clear_generated_world() -> void:
 	camera_controller = null
 	navigation_graph.clear()
 	path_points.clear()
+	fog_bank_nodes.clear()
+	fog_bank_origins.clear()
+	fog_bank_drift_vectors.clear()
+	fog_bank_base_scales.clear()
+	fog_bank_phases.clear()
 
 
 func set_map_seed(seed: int) -> void:
@@ -388,15 +404,20 @@ func _add_fog_banks() -> void:
 func _add_fog_bank_cluster(parent: Node3D, index: int, ground_point: Vector2, rng: RandomNumberGenerator) -> void:
 	var cluster := Node3D.new()
 	cluster.name = "FogBank%d" % index
+	cluster.position = _world_from_ground(ground_point, rng.randf_range(0.2, 0.45))
 	parent.add_child(cluster)
+	fog_bank_nodes.append(cluster)
+	fog_bank_origins.append(cluster.position)
+	fog_bank_drift_vectors.append(Vector3(rng.randf_range(-1.0, 1.0), 0.0, rng.randf_range(-1.0, 1.0)).normalized())
+	fog_bank_base_scales.append(Vector3.ONE)
+	fog_bank_phases.append(rng.randf_range(0.0, TAU))
 
 	var puff_count := rng.randi_range(3, 5)
 	for puff_index in range(puff_count):
 		var offset := Vector2(rng.randf_range(-2.8, 2.8), rng.randf_range(-2.4, 2.4))
-		var puff_point := ground_point + offset
 		var puff := MeshInstance3D.new()
 		puff.name = "Puff%d" % puff_index
-		puff.position = _world_from_ground(puff_point, rng.randf_range(0.48, 1.2))
+		puff.position = Vector3(offset.x, rng.randf_range(0.28, 0.92), offset.y)
 		puff.rotation_degrees = Vector3(rng.randf_range(-3.0, 3.0), rng.randf_range(0.0, 360.0), rng.randf_range(-4.0, 4.0))
 		puff.scale = Vector3(rng.randf_range(3.2, 6.8), rng.randf_range(0.42, 0.95), rng.randf_range(2.2, 5.4))
 
@@ -408,6 +429,27 @@ func _add_fog_bank_cluster(parent: Node3D, index: int, ground_point: Vector2, rn
 		puff.mesh = mesh
 		puff.material_override = fog_bank_material
 		cluster.add_child(puff)
+
+
+func _animate_fog_banks() -> void:
+	if fog_bank_nodes.is_empty():
+		return
+
+	var time := float(Time.get_ticks_msec()) / 1000.0
+	for index in range(fog_bank_nodes.size()):
+		var bank := fog_bank_nodes[index]
+		if not is_instance_valid(bank):
+			continue
+
+		var phase := fog_bank_phases[index]
+		var drift_vector := fog_bank_drift_vectors[index]
+		var side_vector := drift_vector.cross(Vector3.UP)
+		var drift := drift_vector * sin(time * 0.11 + phase) * FOG_DRIFT_RADIUS
+		drift += side_vector * cos(time * 0.07 + phase) * (FOG_DRIFT_RADIUS * 0.55)
+		var breath := 1.0 + sin(time * 0.23 + phase) * FOG_BREATH_AMOUNT
+		bank.position = fog_bank_origins[index] + drift
+		bank.scale = fog_bank_base_scales[index] * Vector3(breath, 1.0 + (breath - 1.0) * 0.32, breath)
+		bank.rotation_degrees.y = sin(time * 0.09 + phase) * 1.5
 
 
 

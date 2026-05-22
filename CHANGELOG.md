@@ -5,6 +5,12 @@ Track meaningful project changes here so future work has a clear history. Use sh
 Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjusted for this active game project.
 Keep dated sections in reverse chronological order. Version headings should point to the latest git tag for each day in the form `YYYY-MM-DD.N`.
 
+## [2026-05-22.7]
+
+- Animated fog banks with slow seeded drift, breathing scale changes, and subtle yaw for spooky rolling atmosphere.
+- Added shader-level fog motion with animated noise drift, soft surface deformation, pulse variation, and richer mist color blending.
+- Kept fog animation running in real time so atmosphere continues during menus and paused moments.
+
 ## [2026-05-22.6]
 
 - Replaced flat ground fog sheets with seeded volumetric-style fog-bank clusters built from overlapping shader puffs.
@@ -104,6 +110,7 @@ Keep dated sections in reverse chronological order. Version headings should poin
 - Added multiple enemy archetypes, selectable tower upgrades, and a start/pause/restart menu overlay.
 - Refactored balance data, wave definitions, and run progress out of `main.gd` into focused helper classes.
 
+[2026-05-22.7]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.7
 [2026-05-22.6]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.6
 [2026-05-22.5]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.5
 [2026-05-22.4]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.4

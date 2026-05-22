@@ -88,6 +88,8 @@ float value_noise(vec2 point) {
 }
 
 void vertex() {
+	float swell = sin(TIME * 0.19 + VERTEX.x * 2.1 + VERTEX.z * 1.7) * 0.035;
+	VERTEX += NORMAL * swell;
 	world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	local_position = VERTEX;
 }
@@ -95,13 +97,18 @@ void vertex() {
 void fragment() {
 	float body = 1.0 - smoothstep(0.26, 1.0, length(local_position));
 	float underbelly = 1.0 - smoothstep(-0.18, 0.92, local_position.y);
-	float broad_noise = value_noise(world_position.xz * 0.18 + TIME * 0.015);
-	float torn_noise = value_noise(world_position.xz * 0.62 - TIME * 0.025);
+	vec2 slow_drift = vec2(TIME * 0.018, TIME * -0.011);
+	vec2 cross_drift = vec2(TIME * -0.031, TIME * 0.024);
+	float broad_noise = value_noise(world_position.xz * 0.18 + slow_drift);
+	float torn_noise = value_noise(world_position.xz * 0.62 + cross_drift);
 	float rolling_noise = broad_noise * 0.68 + torn_noise * 0.32;
 	float rim = pow(1.0 - clamp(dot(normalize(NORMAL), normalize(VIEW)), 0.0, 1.0), 1.6);
-	float opacity = body * underbelly * smoothstep(0.30, 0.88, rolling_noise);
-	ALBEDO = mix(vec3(0.075, 0.105, 0.095), vec3(0.17, 0.20, 0.18), rim);
-	ALPHA = opacity * (0.18 + rim * 0.12);
+	float pulse = 0.84 + sin(TIME * 0.27 + world_position.x * 0.17) * 0.08;
+	float opacity = body * underbelly * smoothstep(0.28, 0.86, rolling_noise) * pulse;
+	vec3 cool_shadow = vec3(0.055, 0.085, 0.078);
+	vec3 lit_mist = vec3(0.18, 0.22, 0.20);
+	ALBEDO = mix(cool_shadow, lit_mist, rim * 0.75 + broad_noise * 0.18);
+	ALPHA = opacity * (0.17 + rim * 0.13);
 }
 """
 

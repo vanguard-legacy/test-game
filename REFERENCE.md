@@ -201,7 +201,8 @@ No functions.
 
 Seeded procedural map owner. It creates broad surrounding terrain, a central generated road, route graph, start/exit markers, atmospheric fog, camera, and tower placement queries.
 
-- `_ready()`: Defers generation until the main menu starts or restarts a run.
+- `_ready()`: Enables always-on processing so ambient fog animation can continue during menus and paused moments.
+- `_process(_delta)`: Updates animated fog bank drift, breathing, and yaw.
 - `generate_map(seed, progress_callback)`: Rebuilds the seeded map, reports loading progress, and refreshes the cached enemy path.
 - `_report_generation_progress(progress_callback, progress, message)`: Sends a progress value and status message to the caller when a callback is available.
 - `_clear_generated_world()`: Removes generated map children and clears camera, controller, path, and navigation state before rebuilding.
@@ -229,6 +230,7 @@ Seeded procedural map owner. It creates broad surrounding terrain, a central gen
 - `_add_atmosphere()`: Adds world environment fog, volumetric fog, ambient light, and background color for distance atmosphere.
 - `_add_fog_banks()`: Places seeded, clustered fog banks around the outer terrain.
 - `_add_fog_bank_cluster(parent, index, ground_point, rng)`: Creates one overlapping cluster of shader-softened volumetric-style mist puffs.
+- `_animate_fog_banks()`: Applies real-time seeded drift, breathing scale, and slow yaw to generated fog bank clusters.
 - `_world_from_ground(point, y_offset)`: Converts an X/Z ground point into a 3D world position at generated height.
 - `_height_at(point)`: Calculates blended terrain and road height for a ground point.
 - `_rolling_height_at(point)`: Calculates the seed-driven terrain height before road smoothing is applied.
@@ -309,7 +311,7 @@ Shared 3D material and shader factory for terrain, roads, tower visuals, enemies
 - `vertex_colored()`: Creates a material that uses mesh vertex colors as albedo.
 - `terrain()`: Returns the terrain shader material, or a vertex-color fallback in headless mode.
 - `road()`: Returns the road shader material, or a vertex-color fallback in headless mode.
-- `fog_bank()`: Returns the noisy volumetric-style fog bank shader material, or an alpha fallback in headless mode.
+- `fog_bank()`: Returns the animated noisy volumetric-style fog bank shader material, or an alpha fallback in headless mode.
 
 ### `scripts/reward_definition.gd`
 
