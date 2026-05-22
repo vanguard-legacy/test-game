@@ -78,7 +78,8 @@ RTS-style camera controller for keyboard/edge panning, middle-mouse terrain-anch
 - `_process(delta)`: Applies keyboard and edge panning while controls are active.
 - `_unhandled_input(event)`: Routes mouse button and mouse motion events into rotation, panning, and zoom behavior.
 - `_handle_mouse_button(mouse_button)`: Starts/stops rotation or panning, captures pan anchors, and applies wheel zoom.
-- `_is_mouse_over_ui()`: Reports whether the cursor is over a UI control.
+- `_is_camera_blocked_by_ui()`: Reports whether the cursor is over interactive UI that should own mouse input.
+- `_is_interactive_ui_control(control)`: Classifies buttons, sliders, scroll areas, text inputs, and modal overlays as camera-blocking UI.
 - `_stop_mouse_drag()`: Clears active mouse rotation and panning state.
 - `_pan_from_keyboard_and_edges(delta)`: Calculates keyboard and edge-scroll movement in camera-relative directions.
 - `_pan_by_terrain_anchor(mouse_position)`: Moves the camera target so the grabbed terrain plane follows the cursor.

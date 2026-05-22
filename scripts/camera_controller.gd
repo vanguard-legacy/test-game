@@ -81,7 +81,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _handle_mouse_button(mouse_button: InputEventMouseButton) -> void:
-	if _is_mouse_over_ui():
+	if _is_camera_blocked_by_ui():
 		_stop_mouse_drag()
 		return
 
@@ -113,8 +113,30 @@ func _handle_mouse_button(mouse_button: InputEventMouseButton) -> void:
 		get_viewport().set_input_as_handled()
 
 
-func _is_mouse_over_ui() -> bool:
-	return get_viewport().gui_get_hovered_control() != null
+func _is_camera_blocked_by_ui() -> bool:
+	var hovered_control := get_viewport().gui_get_hovered_control()
+	while hovered_control != null:
+		if _is_interactive_ui_control(hovered_control):
+			return true
+
+		hovered_control = hovered_control.get_parent() as Control
+
+	return false
+
+
+func _is_interactive_ui_control(control: Control) -> bool:
+	if control is BaseButton:
+		return true
+	if control is LineEdit:
+		return true
+	if control is TextEdit:
+		return true
+	if control is Range:
+		return true
+	if control is ScrollContainer:
+		return true
+
+	return control.name in [&"MenuOverlay", &"RewardOverlay", &"MenuPanel", &"RewardPanel"]
 
 
 func _stop_mouse_drag() -> void:
@@ -137,7 +159,7 @@ func _pan_from_keyboard_and_edges(delta: float) -> void:
 	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
 		move_direction -= right
 
-	if get_viewport().gui_get_hovered_control() == null:
+	if not _is_camera_blocked_by_ui():
 		var viewport_rect := get_viewport().get_visible_rect()
 		var mouse_position := get_viewport().get_mouse_position()
 		if mouse_position.y <= edge_size:
