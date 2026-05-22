@@ -13,43 +13,36 @@ const Materials := preload("res://scripts/materials.gd")
 # build validation, and camera setup so gameplay code can ask higher-level
 # questions such as "where can I place?" or "how do enemies reach the exit?"
 
-const MAP_HALF_SIZE: float = 11.0
-const TERRAIN_CELLS: int = 88
+const MAP_HALF_SIZE: float = 28.0
+const PLAYABLE_HALF_SIZE: float = 11.0
+const TERRAIN_CELLS: int = 128
 const PATH_CELLS: int = 58
+const ROAD_POINT_COUNT: int = 12
 const TOWER_ORIGIN_OFFSET: float = 0.62
 const MIN_TOWER_SPACING: float = 1.25
 const MAX_BUILD_SLOPE: float = 0.55
+
+@export var map_seed: int = 20260522
 
 var path_points: Array[Vector3] = []
 
 var active_camera: Camera3D
 var camera_controller: Node
 var navigation_graph := AStar3D.new()
-# The route intentionally changes elevation and width several times so tower
-# placement has real tactical tradeoffs instead of one obvious lane.
-var start_point := Vector2(-10.0, -6.4)
-var exit_point := Vector2(10.0, 6.8)
-var road_points: Array[Vector2] = [
-	Vector2(-10.0, -6.4),
-	Vector2(-7.8, -5.9),
-	Vector2(-6.2, -3.5),
-	Vector2(-7.2, -0.8),
-	Vector2(-4.0, 1.2),
-	Vector2(-1.8, -1.9),
-	Vector2(0.9, -2.2),
-	Vector2(3.0, 0.8),
-	Vector2(1.2, 3.8),
-	Vector2(4.5, 5.2),
-	Vector2(7.0, 3.2),
-	Vector2(8.6, 5.7),
-	Vector2(10.0, 6.8),
-]
+var start_point := Vector2.ZERO
+var exit_point := Vector2.ZERO
+var road_points: Array[Vector2] = []
+var terrain_features: Array[Vector4] = []
+var terrain_noise := FastNoiseLite.new()
+var detail_noise := FastNoiseLite.new()
+var generation_seed: int = 0
 
 var terrain_material := Materials.terrain()
 var road_material := Materials.road()
 
 
 func _ready() -> void:
+	_configure_generation()
 	_build_world()
 	_build_navigation_graph()
 	path_points = find_path(get_start_position(), get_exit_position())
@@ -137,7 +130,7 @@ func _build_world() -> void:
 	camera_controller = CameraController.new()
 	camera_controller.name = "CameraController"
 	add_child(camera_controller)
-	camera_controller.setup(active_camera, MAP_HALF_SIZE, Callable(self, "find_terrain_position"))
+	camera_controller.setup(active_camera, PLAYABLE_HALF_SIZE, Callable(self, "find_terrain_position"))
 
 	var light := DirectionalLight3D.new()
 	light.name = "Sun"
@@ -148,8 +141,63 @@ func _build_world() -> void:
 
 	_add_terrain_mesh()
 	_add_road_mesh()
+	_add_edge_haze()
 	_add_marker("StartMarker", get_start_position(), Color(0.25, 0.58, 0.28))
 	_add_marker("ExitGate", get_exit_position(), Color(0.16, 0.12, 0.10))
+
+
+func _configure_generation() -> void:
+	generation_seed = map_seed
+	if generation_seed == 0:
+		generation_seed = int(Time.get_unix_time_from_system())
+
+	terrain_noise.seed = generation_seed
+	terrain_noise.frequency = 0.075
+	terrain_noise.fractal_octaves = 4
+	terrain_noise.fractal_gain = 0.48
+	terrain_noise.fractal_lacunarity = 2.1
+
+	detail_noise.seed = generation_seed + 137
+	detail_noise.frequency = 0.23
+	detail_noise.fractal_octaves = 3
+	detail_noise.fractal_gain = 0.42
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = generation_seed
+	_generate_road_points(rng)
+	_generate_terrain_features(rng)
+
+
+func _generate_road_points(rng: RandomNumberGenerator) -> void:
+	road_points.clear()
+	var lane_limit := PLAYABLE_HALF_SIZE - 1.0
+	start_point = Vector2(-lane_limit, rng.randf_range(-6.6, -4.2))
+	exit_point = Vector2(lane_limit, rng.randf_range(4.2, 6.8))
+
+	for index in range(ROAD_POINT_COUNT):
+		var progress := float(index) / float(ROAD_POINT_COUNT - 1)
+		var x: float = lerpf(start_point.x, exit_point.x, progress)
+		var route_wave := sin(progress * TAU * 1.35 + rng.randf_range(-0.4, 0.4)) * rng.randf_range(2.4, 4.5)
+		var route_bend := sin(progress * TAU * 3.1 + rng.randf_range(-1.2, 1.2)) * rng.randf_range(0.6, 1.8)
+		var y: float = lerpf(start_point.y, exit_point.y, progress) + route_wave + route_bend
+		if index == 0:
+			road_points.append(start_point)
+		elif index == ROAD_POINT_COUNT - 1:
+			road_points.append(exit_point)
+		else:
+			road_points.append(Vector2(x, clampf(y, -lane_limit, lane_limit)))
+
+
+func _generate_terrain_features(rng: RandomNumberGenerator) -> void:
+	terrain_features.clear()
+	for _index in range(7):
+		var feature_position := Vector2(
+			rng.randf_range(-PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE),
+			rng.randf_range(-PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE)
+		)
+		var radius := rng.randf_range(3.6, 7.2)
+		var height := rng.randf_range(-0.55, 0.95)
+		terrain_features.append(Vector4(feature_position.x, feature_position.y, radius, height))
 
 
 func _add_terrain_mesh() -> void:
@@ -204,11 +252,11 @@ func _add_road_mesh() -> void:
 
 func _build_navigation_graph() -> void:
 	navigation_graph.clear()
-	var step := (MAP_HALF_SIZE * 2.0) / float(PATH_CELLS)
+	var step := (PLAYABLE_HALF_SIZE * 2.0) / float(PATH_CELLS)
 
 	for x_index in range(PATH_CELLS + 1):
 		for z_index in range(PATH_CELLS + 1):
-			var point := Vector2(-MAP_HALF_SIZE + float(x_index) * step, -MAP_HALF_SIZE + float(z_index) * step)
+			var point := Vector2(-PLAYABLE_HALF_SIZE + float(x_index) * step, -PLAYABLE_HALF_SIZE + float(z_index) * step)
 			if not _is_road(point):
 				continue
 
@@ -264,24 +312,60 @@ func _add_marker(node_name: String, marker_position: Vector3, color: Color) -> v
 	add_child(marker)
 
 
+func _add_edge_haze() -> void:
+	var haze_material := Materials.transparent(Color(0.04, 0.07, 0.06, 0.34))
+	haze_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	haze_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+	var haze_height := 9.0
+	var haze_width := MAP_HALF_SIZE * 2.0
+	var haze_distance := MAP_HALF_SIZE - 1.0
+	_add_haze_wall("NorthHaze", Vector3(0.0, haze_height * 0.5, -haze_distance), Vector3(0.0, 0.0, 0.0), Vector2(haze_width, haze_height), haze_material)
+	_add_haze_wall("SouthHaze", Vector3(0.0, haze_height * 0.5, haze_distance), Vector3(0.0, 180.0, 0.0), Vector2(haze_width, haze_height), haze_material)
+	_add_haze_wall("WestHaze", Vector3(-haze_distance, haze_height * 0.5, 0.0), Vector3(0.0, 90.0, 0.0), Vector2(haze_width, haze_height), haze_material)
+	_add_haze_wall("EastHaze", Vector3(haze_distance, haze_height * 0.5, 0.0), Vector3(0.0, -90.0, 0.0), Vector2(haze_width, haze_height), haze_material)
+
+
+func _add_haze_wall(node_name: String, haze_position: Vector3, rotation: Vector3, size: Vector2, material: Material) -> void:
+	var haze := MeshInstance3D.new()
+	haze.name = node_name
+	haze.position = haze_position
+	haze.rotation_degrees = rotation
+
+	var mesh := PlaneMesh.new()
+	mesh.size = size
+	haze.mesh = mesh
+	haze.material_override = material
+	add_child(haze)
+
+
 func _world_from_ground(point: Vector2, y_offset: float = 0.0) -> Vector3:
 	return Vector3(point.x, _height_at(point) + y_offset, point.y)
 
 
 func _height_at(point: Vector2) -> float:
-	var ridge_height: float = 0.34 * sin(point.x * 0.42) + 0.24 * cos(point.y * 0.58) + 0.14 * sin((point.x - point.y) * 0.36)
-	var hill_a: float = 1.0 - clampf(point.distance_to(Vector2(-5.6, 3.6)) / 5.8, 0.0, 1.0)
-	var hill_b: float = 1.0 - clampf(point.distance_to(Vector2(5.7, -2.6)) / 5.2, 0.0, 1.0)
-	var terrace: float = 1.0 - clampf(point.distance_to(Vector2(-0.8, 6.2)) / 4.8, 0.0, 1.0)
-	var valley: float = 1.0 - clampf(point.distance_to(Vector2(0.4, 0.6)) / 4.5, 0.0, 1.0)
-	var detail: float = 0.08 * sin(point.x * 1.35 + point.y * 0.42) + 0.06 * cos(point.y * 1.22 - point.x * 0.28)
-	var rolling_height: float = ridge_height + smoothstep(0.0, 1.0, hill_a) * 0.8 + smoothstep(0.0, 1.0, hill_b) * 0.55 + smoothstep(0.0, 1.0, terrace) * 0.38 - smoothstep(0.0, 1.0, valley) * 0.42 + detail
+	var rolling_height := _rolling_height_at(point)
 	var road_info := _get_road_info(point)
 	var progress := road_info.progress
 	var road_height: float = _road_height(progress)
 	var road_blend: float = 1.0 - clampf(road_info.distance / (_road_half_width(progress) + 1.15), 0.0, 1.0)
 	road_blend = smoothstep(0.0, 1.0, road_blend)
 	return lerp(rolling_height, road_height, road_blend)
+
+
+func _rolling_height_at(point: Vector2) -> float:
+	var ridge_height: float = 0.44 * terrain_noise.get_noise_2d(point.x, point.y)
+	var detail: float = 0.12 * detail_noise.get_noise_2d(point.x, point.y)
+	var seeded_features := 0.0
+	for feature in terrain_features:
+		var feature_point := Vector2(feature.x, feature.y)
+		var feature_radius := feature.z
+		var influence := 1.0 - clampf(point.distance_to(feature_point) / feature_radius, 0.0, 1.0)
+		seeded_features += smoothstep(0.0, 1.0, influence) * feature.w
+
+	var distant_rolloff := smoothstep(PLAYABLE_HALF_SIZE * 0.82, MAP_HALF_SIZE, maxf(absf(point.x), absf(point.y)))
+	var outer_terrain: float = -0.28 + 0.18 * terrain_noise.get_noise_2d(point.x + 41.0, point.y - 17.0)
+	return lerp(ridge_height + detail + seeded_features, outer_terrain, distant_rolloff * 0.62)
 
 
 func _terrain_color_at(point: Vector2) -> Color:

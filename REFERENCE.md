@@ -194,7 +194,7 @@ No functions.
 
 ### `scripts/level_map.gd`
 
-Procedural map owner. It creates terrain, road mesh, route graph, start/exit markers, camera, and tower placement queries.
+Seeded procedural map owner. It creates broad surrounding terrain, a central generated road, route graph, start/exit markers, edge haze, camera, and tower placement queries.
 
 - `_ready()`: Builds the world, creates the navigation graph, and caches the initial enemy path.
 - `get_active_camera()`: Returns the map camera used for placement, hover, and camera control.
@@ -207,6 +207,9 @@ Procedural map owner. It creates terrain, road mesh, route graph, start/exit mar
 - `find_terrain_position(camera, mouse_position)`: Raycasts against the procedural heightfield using camera projection.
 - `get_tower_terrain_bonus(build_position)`: Converts a build position into a tower height bonus.
 - `_build_world()`: Creates the camera, camera controller, sun, terrain mesh, road mesh, and start/exit markers.
+- `_configure_generation()`: Applies the map seed to terrain noise, detail noise, route generation, and terrain features.
+- `_generate_road_points(rng)`: Builds a deterministic winding road from start to exit inside the playable area.
+- `_generate_terrain_features(rng)`: Builds deterministic hill and valley features that blend into the terrain heightfield.
 - `_add_terrain_mesh()`: Generates the terrain mesh grid and assigns terrain material.
 - `_add_road_mesh()`: Generates the road mesh over cells that overlap the authored road.
 - `_build_navigation_graph()`: Builds AStar points and connections over road cells.
@@ -214,8 +217,11 @@ Procedural map owner. It creates terrain, road mesh, route graph, start/exit mar
 - `_add_road_quad(surface, a, b, c, d)`: Adds two colored triangles for one road cell.
 - `_add_colored_vertex(surface, vertex, color)`: Adds one vertex with vertex color to a surface.
 - `_add_marker(node_name, marker_position, color)`: Creates a start or exit marker mesh.
+- `_add_edge_haze()`: Adds distant dark translucent boundary planes so the larger terrain fades before the skybox dominates.
+- `_add_haze_wall(node_name, haze_position, rotation, size, material)`: Creates one distant edge-haze wall.
 - `_world_from_ground(point, y_offset)`: Converts an X/Z ground point into a 3D world position at generated height.
 - `_height_at(point)`: Calculates blended terrain and road height for a ground point.
+- `_rolling_height_at(point)`: Calculates the seed-driven terrain height before road smoothing is applied.
 - `_terrain_color_at(point)`: Picks terrain vertex color from height and local slope.
 - `_road_color_at(point)`: Picks road vertex color from distance to road edge.
 - `_road_height(progress)`: Evaluates road elevation along route progress.
