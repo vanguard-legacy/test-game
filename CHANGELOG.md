@@ -2,6 +2,10 @@
 
 This file summarizes each day of meaningful project work in short, future-facing notes. Keep entries in reverse chronological order, with exactly two sentences per date so the changelog stays readable as the project grows.
 
+## 2026-05-23
+
+We changed reward choices from full-screen gameplay interruptions into a compact non-modal HUD panel so the run keeps moving while players decide. We also added an Auto Wave toggle that can start waves automatically when the board is ready, and extended the smoke test to cover the new flow.
+
 ## 2026-05-22
 
 We cleaned up project terminology, added the project reference, tightened validation, and changed the menu/run flow so players can generate seeded maps, restart the same seed, and see loading progress. We also expanded procedural terrain and upgraded the map atmosphere with environment fog, volumetric-style fog banks, shader motion, and real-time rolling fog animation.

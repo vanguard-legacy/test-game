@@ -30,6 +30,8 @@ func _run_smoke() -> void:
 	await process_frame
 
 	_verify_game_speed(main)
+	_verify_auto_start_toggle(main)
+	_verify_reward_overlay_non_modal(main)
 	_place_test_towers(main)
 	_verify_sell_tower(main)
 
@@ -134,6 +136,37 @@ func _verify_game_speed(main: Node) -> void:
 		push_error("Game speed control did not return Engine.time_scale to 1x.")
 		quit(1)
 		return
+
+
+func _verify_auto_start_toggle(main: Node) -> void:
+	print("STABILITY_SMOKE_AUTO_START")
+	main._on_auto_start_toggled(true)
+	if not main.auto_start_next_wave:
+		push_error("Auto wave toggle did not enable auto-start.")
+		quit(1)
+		return
+
+	main._on_auto_start_toggled(false)
+	if main.auto_start_next_wave:
+		push_error("Auto wave toggle did not disable auto-start.")
+		quit(1)
+		return
+
+
+func _verify_reward_overlay_non_modal(main: Node) -> void:
+	print("STABILITY_SMOKE_REWARD_OVERLAY")
+	main._open_reward_choices()
+	if main.get_tree().paused:
+		push_error("Reward choices paused gameplay.")
+		quit(1)
+		return
+
+	if main.active_reward_choices.is_empty():
+		push_error("Reward choices did not open.")
+		quit(1)
+		return
+
+	main._on_reward_choice_selected(0)
 
 
 func _verify_sell_tower(main: Node) -> void:

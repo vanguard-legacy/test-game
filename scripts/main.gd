@@ -37,6 +37,7 @@ var active_reward_choices: Array[RewardDefinition] = []
 var game_clock: GameClock = GameClock.new()
 var current_map_seed: int = 0
 var is_generating_map: bool = false
+var auto_start_next_wave: bool = false
 
 
 func _ready() -> void:
@@ -64,6 +65,7 @@ func _connect_scene_signals() -> void:
 	hud.restart_requested.connect(_on_restart_requested)
 	hud.quit_requested.connect(_on_quit_requested)
 	hud.game_speed_requested.connect(_on_game_speed_requested)
+	hud.auto_start_toggled.connect(_on_auto_start_toggled)
 
 
 func _show_initial_menu() -> void:
@@ -172,9 +174,11 @@ func _check_wave_complete() -> void:
 	run_state.wave_active = false
 	if run_state.add_xp(GameBalance.WAVE_CLEAR_XP):
 		_open_reward_choices()
+		_maybe_auto_start_next_wave()
 		return
 
 	hud.set_message("Wave clear. Build more or start the next wave.")
+	_maybe_auto_start_next_wave()
 
 
 func _on_build_tower_requested(tower_id: String) -> void:
@@ -230,6 +234,7 @@ func _on_tower_placement_confirmed(placement_position: Vector3) -> void:
 	tower_placement.cancel_placement()
 	_select_tower(tower)
 	hud.set_message("%s placed. Build more or start the wave." % tower.get_display_name())
+	_maybe_auto_start_next_wave()
 	_update_ui()
 
 
@@ -355,6 +360,14 @@ func _on_game_speed_requested(requested_speed: float) -> void:
 	_set_game_speed(requested_speed)
 
 
+func _on_auto_start_toggled(is_enabled: bool) -> void:
+	auto_start_next_wave = is_enabled
+	hud.set_message("Auto wave %s." % ("enabled" if auto_start_next_wave else "disabled"))
+	if auto_start_next_wave and run_state.game_started and not run_state.wave_active and not run_state.game_over:
+		_maybe_auto_start_next_wave()
+	_update_ui()
+
+
 func _game_over() -> void:
 	run_state.game_over = true
 	run_state.wave_active = false
@@ -403,6 +416,7 @@ func _clear_run_entities() -> void:
 	selected_tower = null
 	selected_tower_id = GameBalance.TOWER_GWIZARD
 	active_reward_choices.clear()
+	auto_start_next_wave = false
 
 
 func _restart_game() -> void:
@@ -439,6 +453,7 @@ func _make_hud_view_model() -> HudViewModel:
 	view_model.can_build = run_state.game_started and not run_state.game_over
 	view_model.is_building = tower_placement.is_active
 	view_model.can_start_wave = run_state.game_started and not run_state.game_over and not run_state.wave_active and not towers.is_empty()
+	view_model.auto_start_next_wave = auto_start_next_wave
 	view_model.game_speed = game_clock.speed
 	return view_model
 
@@ -529,11 +544,21 @@ func _open_reward_choices() -> void:
 	if active_reward_choices.is_empty():
 		return
 
-	get_tree().paused = true
 	hud.hide_tower_tooltip()
 	hud.show_reward_choices(active_reward_choices)
-	hud.set_message("Choose a reward to shape the run.")
+	hud.set_message("Reward ready. Choose when you have a moment.")
 	_sync_camera_controls()
+
+
+func _maybe_auto_start_next_wave() -> void:
+	if not auto_start_next_wave:
+		return
+	if run_state.game_over or run_state.wave_active or not run_state.game_started:
+		return
+	if towers.is_empty():
+		return
+
+	_start_next_wave()
 
 
 func _apply_tower_modifiers() -> void:
@@ -560,7 +585,7 @@ func _update_hovered_tower() -> void:
 
 
 func _sync_camera_controls() -> void:
-	var can_control_camera := run_state.game_started and not is_generating_map and not run_state.game_over and not run_state.reward_pending and not get_tree().paused and active_reward_choices.is_empty()
+	var can_control_camera := run_state.game_started and not is_generating_map and not run_state.game_over and not get_tree().paused
 	level_map.set_camera_controls_enabled(can_control_camera)
 
 

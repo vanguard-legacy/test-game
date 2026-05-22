@@ -17,4 +17,5 @@ var active_tower_id: String = ""
 var can_build: bool = false
 var is_building: bool = false
 var can_start_wave: bool = false
+var auto_start_next_wave: bool = false
 var game_speed: float = 1.0

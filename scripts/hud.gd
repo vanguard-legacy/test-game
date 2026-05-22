@@ -26,6 +26,7 @@ signal new_game_requested(seed_text: String)
 signal restart_requested
 signal quit_requested
 signal game_speed_requested(speed: float)
+signal auto_start_toggled(is_enabled: bool)
 
 @onready var top_bar: PanelContainer = $Root/Layout/TopBar
 @onready var build_panel: PanelContainer = $Root/Layout/BottomRow/BuildPanel
@@ -42,6 +43,7 @@ signal game_speed_requested(speed: float)
 @onready var speed_1x_button: Button = $Root/Layout/TopBar/Margin/StatsRow/SpeedControls/Speed1xButton
 @onready var speed_2x_button: Button = $Root/Layout/TopBar/Margin/StatsRow/SpeedControls/Speed2xButton
 @onready var speed_4x_button: Button = $Root/Layout/TopBar/Margin/StatsRow/SpeedControls/Speed4xButton
+@onready var auto_start_button: Button = $Root/Layout/TopBar/Margin/StatsRow/AutoStartButton
 @onready var menu_button: Button = $Root/Layout/TopBar/Margin/StatsRow/MenuButton
 @onready var build_title: Label = $Root/Layout/BottomRow/BuildPanel/Margin/Stack/BuildTitle
 @onready var upgrade_title: Label = $Root/Layout/BottomRow/UpgradePanel/Margin/Stack/UpgradeTitle
@@ -148,6 +150,7 @@ func _connect_button_signals() -> void:
 	speed_1x_button.pressed.connect(_on_speed_button_pressed.bind(1.0))
 	speed_2x_button.pressed.connect(_on_speed_button_pressed.bind(2.0))
 	speed_4x_button.pressed.connect(_on_speed_button_pressed.bind(4.0))
+	auto_start_button.pressed.connect(_on_auto_start_button_pressed)
 	cancel_build_button.pressed.connect(_on_cancel_build_button_pressed)
 	start_wave_button.pressed.connect(_on_start_wave_button_pressed)
 	upgrade_tower_button.pressed.connect(_on_upgrade_tower_button_pressed)
@@ -169,6 +172,8 @@ func update_from_view_model(view_model: HudViewModel) -> void:
 	_update_stats(view_model)
 	_update_build_options(view_model)
 	_update_speed_controls(view_model.game_speed)
+	auto_start_button.button_pressed = view_model.auto_start_next_wave
+	auto_start_button.modulate.a = 1.0 if view_model.auto_start_next_wave else 0.74
 	start_wave_button.disabled = not view_model.can_start_wave
 
 
@@ -282,6 +287,7 @@ func hide_menu() -> void:
 
 func show_reward_choices(choices: Array[RewardDefinition]) -> void:
 	reward_overlay.visible = true
+	reward_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	reward_title.text = "Choose a Reward"
 	for index in range(reward_choice_buttons.size()):
 		var button := reward_choice_buttons[index]
@@ -365,6 +371,10 @@ func _on_speed_button_pressed(speed: float) -> void:
 	game_speed_requested.emit(speed)
 
 
+func _on_auto_start_button_pressed() -> void:
+	auto_start_toggled.emit(auto_start_button.button_pressed)
+
+
 func _on_menu_button_pressed() -> void:
 	menu_requested.emit()
 
@@ -393,7 +403,7 @@ func _apply_styles() -> void:
 	for panel in [top_bar, build_panel, upgrade_panel, message_panel, menu_panel, reward_panel, tower_tooltip]:
 		panel.add_theme_stylebox_override("panel", UiTheme.panel_style())
 
-	for button in [cancel_build_button, start_wave_button, upgrade_tower_button, sell_tower_button, menu_button, resume_button, new_game_button, restart_button, quit_button]:
+	for button in [cancel_build_button, start_wave_button, upgrade_tower_button, sell_tower_button, menu_button, auto_start_button, resume_button, new_game_button, restart_button, quit_button]:
 		_style_button(button)
 
 	for button in tower_slot_buttons:
@@ -407,6 +417,8 @@ func _apply_styles() -> void:
 		button.toggle_mode = true
 		button.set_meta("speed", [1.0, 2.0, 4.0][index])
 		_style_button(button)
+
+	auto_start_button.toggle_mode = true
 
 	title_label.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
 	title_label.add_theme_font_size_override("font_size", 20)

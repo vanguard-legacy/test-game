@@ -51,7 +51,7 @@ Map scene root for procedural terrain, road/path generation, camera setup, and b
 
 ### `scenes/hud.tscn`
 
-Container-based HUD scene. It owns top-bar stats, speed buttons, build controls, tower upgrade/sell controls, command log, main menu overlay with seed/loading controls, reward overlay, and tooltip nodes.
+Container-based HUD scene. It owns top-bar stats, speed and auto-wave controls, build controls, tower upgrade/sell controls, command log, main menu overlay with seed/loading controls, compact reward panel, and tooltip nodes.
 
 ### `scenes/tower.tscn`
 
@@ -151,7 +151,7 @@ Presentation and input layer for the HUD. It renders view models, manages menus/
 - `_cache_button_groups()`: Stores related tower-slot, reward-choice, and speed buttons in arrays.
 - `_connect_button_signals()`: Wires all HUD buttons and hover events to local handlers.
 - `_process(_delta)`: Keeps the tooltip following the cursor while visible.
-- `update_from_view_model(view_model)`: Applies the current HUD stats, build options, speed controls, and start-wave state.
+- `update_from_view_model(view_model)`: Applies the current HUD stats, build options, speed controls, auto-wave state, and start-wave state.
 - `set_message(message)`: Appends a non-empty message to the command log and scrolls to the bottom.
 - `clear_message_log()`: Clears command log text and resets scroll position.
 - `set_build_mode(is_building)`: Shows/enables or hides/disables cancel-build behavior and locks build slots during placement.
@@ -164,7 +164,7 @@ Presentation and input layer for the HUD. It renders view models, manages menus/
 - `set_seed_input(seed_text)`: Updates the editable menu seed field.
 - `show_loading_progress(progress, message)`: Updates the terrain-generation progress bar and disables menu run buttons while loading.
 - `hide_menu()`: Closes the main menu overlay.
-- `show_reward_choices(choices)`: Opens the reward overlay and fills up to three reward buttons.
+- `show_reward_choices(choices)`: Opens the compact non-modal reward panel and fills up to three reward buttons.
 - `hide_reward_choices()`: Closes the reward overlay.
 - `show_tower_tooltip(title, body, source)`: Shows a cursor-following tooltip from world, placement, or UI source.
 - `hide_tower_tooltip()`: Hides any tooltip and clears its source.
@@ -178,6 +178,7 @@ Presentation and input layer for the HUD. It renders view models, manages menus/
 - `_on_sell_tower_button_pressed()`: Emits selected-tower sell intent.
 - `_on_reward_choice_button_pressed(choice_index)`: Emits the selected reward index.
 - `_on_speed_button_pressed(speed)`: Emits requested game speed.
+- `_on_auto_start_button_pressed()`: Emits requested auto-wave toggle state.
 - `_on_menu_button_pressed()`: Emits menu-open intent.
 - `_on_resume_button_pressed()`: Emits resume intent.
 - `_on_new_game_button_pressed()`: Emits new-game intent with the current seed input text.
@@ -280,20 +281,22 @@ Game coordinator. It connects map generation, placement, HUD, clock, run state, 
 - `_on_restart_requested()`: Restarts the run by regenerating the current map seed.
 - `_on_quit_requested()`: Restores normal time scale and quits the tree.
 - `_on_game_speed_requested(requested_speed)`: Passes requested speed to the game clock.
+- `_on_auto_start_toggled(is_enabled)`: Stores auto-wave preference, announces the change, and starts a wave immediately when appropriate.
 - `_game_over()`: Marks defeat, cancels placement, shows defeat menu, and updates HUD.
 - `_start_run(seed, regenerate_map)`: Shows loading UI, optionally regenerates the map for a seed, and starts a clean run.
 - `_on_map_generation_progress(progress, message)`: Forwards map-generation progress updates to the HUD.
 - `_clear_run_entities()`: Frees enemies/towers and clears selection/reward arrays.
 - `_restart_game()`: Resets selections, clock, run state, logs, overlays, and HUD after entities have been cleared.
 - `_update_ui()`: Sends a fresh view model and selected tower data to the HUD, then syncs camera controls.
-- `_make_hud_view_model()`: Builds the HUD snapshot from run state, placement state, and game clock.
+- `_make_hud_view_model()`: Builds the HUD snapshot from run state, placement state, auto-wave state, and game clock.
 - `_get_tower_positions()`: Collects placed tower positions for placement spacing checks.
 - `_select_tower(tower)`: Deselects the previous tower, selects a new one, and updates tower controls.
 - `_clear_selected_tower()`: Clears current tower selection and updates tower controls.
 - `_find_tower_at_mouse()`: Picks a tower under the mouse using screen-space then terrain-space checks.
 - `_find_tower_near_screen_position(camera, mouse_position)`: Returns the closest tower projected near the cursor.
 - `_open_pause_menu()`: Pauses and opens the menu when the game can be paused.
-- `_open_reward_choices()`: Drafts reward choices, pauses, shows reward UI, and disables camera controls.
+- `_open_reward_choices()`: Drafts reward choices and shows the non-modal reward panel without pausing gameplay.
+- `_maybe_auto_start_next_wave()`: Starts the next wave automatically when auto-wave is enabled and the board can launch safely.
 - `_apply_tower_modifiers()`: Reapplies run-wide tower modifiers to every valid tower.
 - `_update_hovered_tower()`: Shows or hides world tower tooltips based on cursor and placement state.
 - `_sync_camera_controls()`: Enables camera controls only while gameplay can accept them.
@@ -430,13 +433,15 @@ Typed wave data consumed by run state and spawning code.
 
 ### `tests/stability_smoke.gd`
 
-Headless gameplay smoke test that checks reward drafting, starting a game, speed control, tower placement, selected-tower selling, and two wave completions.
+Headless gameplay smoke test that checks reward drafting, starting a game, speed control, auto-wave toggling, non-modal rewards, tower placement, selected-tower selling, and two wave completions.
 
 - `_initialize()`: Defers the smoke test until the scene tree is ready.
 - `_run_smoke()`: Orchestrates the full smoke scenario, waits for async map generation, verifies wave progress, and exits with success on `STABILITY_SMOKE_OK`.
 - `_verify_reward_choices()`: Ensures reward drafting always returns three non-empty reward ids.
 - `_place_test_towers(main)`: Places a fixed set of towers at known ground points.
 - `_verify_game_speed(main)`: Confirms 4x and 1x speed requests update `Engine.time_scale`.
+- `_verify_auto_start_toggle(main)`: Confirms auto-wave intent toggles gameplay state on and off.
+- `_verify_reward_overlay_non_modal(main)`: Confirms reward choices open without pausing gameplay.
 - `_verify_sell_tower(main)`: Confirms selecting and selling a non-last tower removes it and refunds gold.
 - `_run_wave_until_complete(main)`: Manually steps main, towers, and enemies until a wave ends, reward appears, defeat occurs, or timeout fails the test.
 
