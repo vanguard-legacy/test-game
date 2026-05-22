@@ -1,6 +1,7 @@
 extends SceneTree
 
 const GameBalance := preload("res://scripts/game_balance.gd")
+const Tower := preload("res://scripts/tower.gd")
 const MAIN_SCENE: PackedScene = preload("res://scenes/main.tscn")
 const MAX_STEPS_PER_WAVE: int = 2200
 const SIMULATION_STEP: float = 0.1
@@ -134,7 +135,7 @@ func _verify_sell_tower(main: Node) -> void:
 	print("STABILITY_SMOKE_SELL_TOWER")
 	var gold_before: int = main.run_state.gold
 	var tower_count_before: int = main.towers.size()
-	var tower_to_sell: PrototypeTower = main.towers[0]
+	var tower_to_sell: Tower = main.towers[0]
 	main._select_tower(tower_to_sell)
 	if not tower_to_sell.is_selected:
 		push_error("Selecting a tower did not enable its selection highlight.")

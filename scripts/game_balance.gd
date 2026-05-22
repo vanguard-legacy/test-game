@@ -1,4 +1,4 @@
-class_name PrototypeGameBalance
+class_name DefenseGameBalance
 extends RefCounted
 
 const TowerDefinition := preload("res://scripts/tower_definition.gd")
@@ -8,7 +8,7 @@ const TowerTerrainBonus := preload("res://scripts/tower_terrain_bonus.gd")
 const WaveDefinition := preload("res://scripts/wave_definition.gd")
 const TowerModifiers := preload("res://scripts/tower_modifiers.gd")
 
-# Central prototype balance catalogue. Keep numbers here, convert them into
+# Central balance catalogue. Keep numbers here, convert them into
 # typed definitions here, and keep gameplay scripts free of dictionary keys.
 
 const STARTING_LIVES: int = 10

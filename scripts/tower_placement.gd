@@ -1,7 +1,9 @@
 extends Node3D
-class_name PrototypeTowerPlacement
+class_name DefenseTowerPlacement
 
 const BuildPlacementResult := preload("res://scripts/build_placement_result.gd")
+const LevelMap := preload("res://scripts/level_map.gd")
+const Materials := preload("res://scripts/materials.gd")
 
 # Handles the preview/click lifecycle for placing towers. Main decides which
 # tower is being built; LevelMap decides whether the hovered terrain is legal.
@@ -14,7 +16,7 @@ signal placement_updated(result: BuildPlacementResult)
 
 const PREVIEW_SURFACE_OFFSET: float = 0.56
 
-var level_map: PrototypeLevelMap
+var level_map: LevelMap
 var active_camera: Camera3D
 var occupied_positions: Array[Vector3] = []
 var is_active: bool = false
@@ -29,7 +31,7 @@ func _ready() -> void:
 	_build_preview()
 
 
-func setup(map: PrototypeLevelMap) -> void:
+func setup(map: LevelMap) -> void:
 	level_map = map
 	active_camera = level_map.get_active_camera()
 
@@ -115,7 +117,7 @@ func _build_preview() -> void:
 	mesh.height = 0.08
 	preview.mesh = mesh
 
-	valid_material = PrototypeMaterials.transparent(Color(0.35, 0.95, 0.45, 0.45))
-	invalid_material = PrototypeMaterials.transparent(Color(0.95, 0.2, 0.2, 0.45))
+	valid_material = Materials.transparent(Color(0.35, 0.95, 0.45, 0.45))
+	invalid_material = Materials.transparent(Color(0.95, 0.2, 0.2, 0.45))
 	preview.material_override = valid_material
 	add_child(preview)

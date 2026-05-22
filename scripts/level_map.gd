@@ -1,5 +1,5 @@
 extends Node3D
-class_name PrototypeLevelMap
+class_name DefenseLevelMap
 
 const BuildPlacementResult := preload("res://scripts/build_placement_result.gd")
 const CameraController := preload("res://scripts/camera_controller.gd")
@@ -7,8 +7,9 @@ const GameBalance := preload("res://scripts/game_balance.gd")
 const RoadInfo := preload("res://scripts/road_info.gd")
 const TerrainQuery := preload("res://scripts/terrain_query.gd")
 const TowerTerrainBonus := preload("res://scripts/tower_terrain_bonus.gd")
+const Materials := preload("res://scripts/materials.gd")
 
-# Procedural prototype map. This node owns terrain height, road shape, pathing,
+# Procedural game map. This node owns terrain height, road shape, pathing,
 # build validation, and camera setup so gameplay code can ask higher-level
 # questions such as "where can I place?" or "how do enemies reach the exit?"
 
@@ -44,8 +45,8 @@ var road_points: Array[Vector2] = [
 	Vector2(10.0, 6.8),
 ]
 
-var terrain_material := PrototypeMaterials.terrain()
-var road_material := PrototypeMaterials.road()
+var terrain_material := Materials.terrain()
+var road_material := Materials.road()
 
 
 func _ready() -> void:
@@ -259,7 +260,7 @@ func _add_marker(node_name: String, marker_position: Vector3, color: Color) -> v
 	mesh.bottom_radius = 0.45
 	mesh.height = 0.7
 	marker.mesh = mesh
-	marker.material_override = PrototypeMaterials.standard(color)
+	marker.material_override = Materials.standard(color)
 	add_child(marker)
 
 

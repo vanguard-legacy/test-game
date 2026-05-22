@@ -1,4 +1,4 @@
-class_name PrototypeEnemyDefinition
+class_name DefenseEnemyDefinition
 extends RefCounted
 
 # Enemy archetype plus per-wave scaling. Instances copy from this definition

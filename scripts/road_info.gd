@@ -1,4 +1,4 @@
-class_name PrototypeRoadInfo
+class_name DefenseRoadInfo
 extends RefCounted
 
 # Distance/progress pair for procedural road calculations.

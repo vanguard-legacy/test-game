@@ -171,6 +171,10 @@ if ($null -ne $SmokeExitCode -and $SmokeExitCode -ne 0) {
     throw "Godot stability smoke failed with exit code $SmokeExitCode"
 }
 
+if ($SmokeOutputText -match "SCRIPT ERROR|GDScript Error|SHADOWED_|Parse Error|Compile Error") {
+    throw "Godot stability smoke reported GDScript errors or warnings."
+}
+
 if ($SmokeOutputText -notmatch "STABILITY_SMOKE_OK") {
     throw "Godot stability smoke did not report STABILITY_SMOKE_OK."
 }

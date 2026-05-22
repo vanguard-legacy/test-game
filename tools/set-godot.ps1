@@ -20,7 +20,7 @@ $env:GODOT_EXE = $ResolvedGodot.Path
 $Shim = @'
 @echo off
 if "%GODOT_EXE%"=="" (
-  echo GODOT_EXE is not set. Run scripts\set-godot.ps1 -GodotPath "C:\Path\To\Godot.exe".
+  echo GODOT_EXE is not set. Run tools\set-godot.ps1 -GodotPath "C:\Path\To\Godot.exe".
   exit /b 1
 )
 "%GODOT_EXE%" %*

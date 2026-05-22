@@ -1,4 +1,4 @@
-class_name PrototypeTerrainQuery
+class_name DefenseTerrainQuery
 extends RefCounted
 
 # Ray/terrain query result shared by the map, camera controller, and hover code.

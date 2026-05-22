@@ -1,4 +1,4 @@
-class_name PrototypeGameClock
+class_name DefenseGameClock
 extends RefCounted
 
 signal speed_changed(speed: float)

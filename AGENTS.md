@@ -29,7 +29,7 @@
 
 - Name nodes by role: `Player`, `CameraRig`, `HealthBar`, `Hitbox`, `Hurtbox`, `StateMachine`, `AnimationPlayer`.
 - Put reusable gameplay code under `res://scripts/` once it is shared.
-- Put scenes under `res://scenes/` when the project grows beyond a prototype.
+- Put scenes under `res://scenes/` when the project grows beyond its current structure.
 - Put temporary validation or test scenes under `res://tests/`.
 - Keep exported variables designer-friendly with clear names and sensible defaults.
 - Keep coordinator scripts thin. If a call starts collecting many parameters, introduce a small typed model or move the ownership to the script that already owns that state.
@@ -57,6 +57,7 @@
 
 - Read `DESIGN.md` before making gameplay, UI, art-direction, level, enemy, tower, score, or progression changes.
 - Keep `CHANGELOG.md` current when making meaningful gameplay, architecture, asset, UI, validation, or documentation changes.
+- Keep `REFERENCE.md` current when adding, removing, renaming, or materially changing authored files or functions.
 - Changelog entries should be dated, concise, written for future developers rather than as a transcript of the chat, and kept in reverse chronological order.
 - Version tags should use date-based names in the form `YYYY-MM-DD.N`, where `N` increments for each tag created on the same date.
 - When creating a version tag, use a matching changelog release heading such as `## [YYYY-MM-DD.N]`, and keep the bottom link references in sync.

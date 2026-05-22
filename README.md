@@ -1,12 +1,12 @@
 # Test Game
 
-A 3D high-fantasy medieval tower defense prototype where terrain height, path width, seasons, weather, towers, and enemy variety shape the defense.
+A 3D high-fantasy medieval tower defense game where terrain height, path width, seasons, weather, towers, and enemy variety shape the defense.
 
-See `DESIGN.md` for the current design brief and `CHANGELOG.md` for project history.
+See `DESIGN.md` for the current design brief, `CHANGELOG.md` for project history, and `REFERENCE.md` for a file/function map.
 
-## Prototype
+## Game
 
-Open the project in Godot and run the main scene. The first prototype is intentionally tiny:
+Open the project in Godot and run the main scene. The current build focuses on:
 
 - A larger generated 3D terrain map with low ground, ridges, valleys, and wider build zones.
 - A longer procedural road with multiple bends, climbs, descents, chokepoints, and wider sections.
@@ -25,7 +25,7 @@ Open the project in Godot and run the main scene. The first prototype is intenti
 Build towers from the HUD build panel, click a green patch of terrain to place them, then press Start Wave when the defense is ready.
 Hover tower buttons or placed towers to inspect their role and stats. Camera controls are disabled while menus and reward choices are open.
 
-The prototype is split into small Godot scenes:
+The game is split into small Godot scenes:
 
 - `scenes/main.tscn` coordinates the round and tower placement.
 - `scenes/level_map.tscn` owns the simple terrain and path.

@@ -1,4 +1,4 @@
-class_name PrototypeRunState
+class_name DefenseRunState
 extends RefCounted
 
 const GameBalance := preload("res://scripts/game_balance.gd")

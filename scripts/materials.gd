@@ -1,4 +1,4 @@
-class_name PrototypeMaterials
+class_name DefenseMaterials
 extends RefCounted
 
 

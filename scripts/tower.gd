@@ -1,15 +1,17 @@
 extends Node3D
-class_name PrototypeTower
+class_name DefenseTower
 
 const GameBalance := preload("res://scripts/game_balance.gd")
 const TowerDefinition := preload("res://scripts/tower_definition.gd")
 const TowerModifiers := preload("res://scripts/tower_modifiers.gd")
 const TowerTerrainBonus := preload("res://scripts/tower_terrain_bonus.gd")
+const Enemy := preload("res://scripts/enemy.gd")
+const Materials := preload("res://scripts/materials.gd")
 
 # Tower combat actor. Definitions provide base identity and visuals; local level
 # and run-wide modifiers combine into the live combat stats recalculated here.
 
-var targets: Array[PrototypeEnemy] = []
+var targets: Array[Enemy] = []
 var cooldown: float = 0.0
 var tower_id: String = GameBalance.TOWER_GWIZARD
 var tower_type_name: String = "G'wizard Tower"
@@ -31,8 +33,8 @@ var terrain_bonus: TowerTerrainBonus = GameBalance.get_tower_terrain_bonus(0.0)
 var is_selected: bool = false
 var beam_visible_timer: float = 0.0
 var beam_mesh := ImmediateMesh.new()
-var range_material := PrototypeMaterials.transparent(Color(0.55, 0.80, 1.0, 0.12))
-var selected_range_material := PrototypeMaterials.transparent(Color(1.0, 0.84, 0.28, 0.28))
+var range_material := Materials.transparent(Color(0.55, 0.80, 1.0, 0.12))
+var selected_range_material := Materials.transparent(Color(1.0, 0.84, 0.28, 0.28))
 
 @onready var focus_crystal: MeshInstance3D = $FocusCrystal
 @onready var tower_range: MeshInstance3D = $TowerRange
@@ -65,7 +67,7 @@ func setup(new_tower_id: String, modifiers: TowerModifiers) -> void:
 	_apply_tower_definition(GameBalance.get_tower_definition(tower_id))
 
 
-func set_targets(new_targets: Array[PrototypeEnemy]) -> void:
+func set_targets(new_targets: Array[Enemy]) -> void:
 	targets = new_targets
 
 
@@ -87,8 +89,8 @@ func set_selected(new_is_selected: bool) -> void:
 	tower_range.material_override = selected_range_material if is_selected else range_material
 
 
-func _find_target() -> PrototypeEnemy:
-	var closest: PrototypeEnemy = null
+func _find_target() -> Enemy:
+	var closest: Enemy = null
 	var closest_distance := attack_range
 
 	for target in targets:
@@ -149,7 +151,7 @@ func _ready() -> void:
 	_update_upgrade_visuals()
 
 
-func _attack(target: PrototypeEnemy) -> void:
+func _attack(target: Enemy) -> void:
 	match effect:
 		GameBalance.TOWER_EFFECT_FROST:
 			target.take_damage(damage)
@@ -188,10 +190,10 @@ func _apply_tower_definition(definition: TowerDefinition) -> void:
 	slow_multiplier = definition.slow_multiplier
 	slow_duration = definition.slow_duration
 	splash_radius = definition.splash_radius
-	roof.material_override = PrototypeMaterials.standard(definition.roof_color)
-	banner.material_override = PrototypeMaterials.standard(definition.banner_color)
-	focus_crystal.material_override = PrototypeMaterials.transparent(definition.crystal_color)
-	beam.material_override = PrototypeMaterials.unshaded(beam_color)
+	roof.material_override = Materials.standard(definition.roof_color)
+	banner.material_override = Materials.standard(definition.banner_color)
+	focus_crystal.material_override = Materials.transparent(definition.crystal_color)
+	beam.material_override = Materials.unshaded(beam_color)
 	_recalculate_stats()
 	_update_upgrade_visuals()
 

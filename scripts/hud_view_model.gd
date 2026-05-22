@@ -1,4 +1,4 @@
-class_name PrototypeHudViewModel
+class_name DefenseHudViewModel
 extends RefCounted
 
 # One-frame snapshot for the HUD. Main builds this from gameplay state so HUD

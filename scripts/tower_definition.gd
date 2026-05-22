@@ -1,4 +1,4 @@
-class_name PrototypeTowerDefinition
+class_name DefenseTowerDefinition
 extends RefCounted
 
 # Immutable-ish tower tuning object. Balance data may still be authored as

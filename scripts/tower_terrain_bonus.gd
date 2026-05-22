@@ -1,4 +1,4 @@
-class_name PrototypeTowerTerrainBonus
+class_name DefenseTowerTerrainBonus
 extends RefCounted
 
 # Placement-derived combat modifier. Height is measured from the terrain under

@@ -1,4 +1,4 @@
-class_name PrototypeBuildPlacementResult
+class_name DefenseBuildPlacementResult
 extends RefCounted
 
 # Validated tower placement result. `has_hit` answers whether the cursor touched

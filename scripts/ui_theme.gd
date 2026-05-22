@@ -1,4 +1,4 @@
-class_name PrototypeUiTheme
+class_name DefenseUiTheme
 extends RefCounted
 
 const PANEL_COLOR: Color = Color(0.09, 0.12, 0.11, 0.86)

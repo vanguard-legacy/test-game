@@ -1,4 +1,4 @@
-class_name PrototypeTooltipData
+class_name DefenseTooltipData
 extends RefCounted
 
 # Small UI text payload for cursor-following tooltips.

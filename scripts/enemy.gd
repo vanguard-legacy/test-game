@@ -1,10 +1,11 @@
 extends Node3D
-class_name PrototypeEnemy
+class_name DefenseEnemy
 
-signal reached_exit(enemy: PrototypeEnemy)
-signal defeated(enemy: PrototypeEnemy)
+signal reached_exit(enemy: DefenseEnemy)
+signal defeated(enemy: DefenseEnemy)
 
 const EnemyDefinition := preload("res://scripts/enemy_definition.gd")
+const Materials := preload("res://scripts/materials.gd")
 
 # Enemy movement/combat actor. Spawn setup copies an EnemyDefinition so each
 # instance can be damaged, slowed, and freed without mutating shared balance.
@@ -84,10 +85,10 @@ func apply_slow(multiplier: float, duration: float) -> void:
 func _apply_enemy_visuals(definition: EnemyDefinition) -> void:
 	name = enemy_type_name
 	scale = Vector3.ONE * definition.visual_scale
-	body.material_override = PrototypeMaterials.standard(definition.body_color)
+	body.material_override = Materials.standard(definition.body_color)
 	head.material_override = body.material_override
-	hat.material_override = PrototypeMaterials.standard(definition.hat_color)
-	left_ear.material_override = PrototypeMaterials.standard(definition.ear_color)
+	hat.material_override = Materials.standard(definition.hat_color)
+	left_ear.material_override = Materials.standard(definition.ear_color)
 	right_ear.material_override = left_ear.material_override
 
 

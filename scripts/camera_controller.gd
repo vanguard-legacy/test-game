@@ -1,5 +1,5 @@
 extends Node
-class_name PrototypeCameraController
+class_name DefenseCameraController
 
 const TerrainQuery := preload("res://scripts/terrain_query.gd")
 

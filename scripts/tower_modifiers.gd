@@ -1,4 +1,4 @@
-class_name PrototypeTowerModifiers
+class_name DefenseTowerModifiers
 extends RefCounted
 
 const RewardDefinition := preload("res://scripts/reward_definition.gd")
@@ -11,8 +11,8 @@ var range_bonus: float = 0.0
 var fire_rate_multiplier: float = 1.0
 
 
-func duplicate_modifiers() -> PrototypeTowerModifiers:
-	var copy := PrototypeTowerModifiers.new()
+func duplicate_modifiers():
+	var copy = get_script().new()
 	copy.damage_multiplier = damage_multiplier
 	copy.range_bonus = range_bonus
 	copy.fire_rate_multiplier = fire_rate_multiplier

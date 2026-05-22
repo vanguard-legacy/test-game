@@ -1,4 +1,4 @@
-class_name PrototypeRewardDefinition
+class_name DefenseRewardDefinition
 extends RefCounted
 
 const TYPE_UNLOCK_TOWER: String = "unlock_tower"

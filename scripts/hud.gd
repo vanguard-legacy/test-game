@@ -1,11 +1,13 @@
 extends CanvasLayer
-class_name PrototypeHud
+class_name DefenseHud
 
 const GameBalance := preload("res://scripts/game_balance.gd")
 const HudViewModel := preload("res://scripts/hud_view_model.gd")
 const RewardDefinition := preload("res://scripts/reward_definition.gd")
 const TowerDefinition := preload("res://scripts/tower_definition.gd")
 const TooltipData := preload("res://scripts/tooltip_data.gd")
+const Tower := preload("res://scripts/tower.gd")
+const UiTheme := preload("res://scripts/ui_theme.gd")
 const TOOLTIP_OFFSET: Vector2 = Vector2(18.0, 18.0)
 
 # Presentation-only HUD. Gameplay state arrives as typed view models and
@@ -195,7 +197,7 @@ func _update_speed_controls(game_speed: float) -> void:
 		button.modulate.a = 1.0 if button.button_pressed else 0.72
 
 
-func update_selected_tower(tower: PrototypeTower, gold: int) -> void:
+func update_selected_tower(tower: Tower, gold: int) -> void:
 	if tower == null or not is_instance_valid(tower):
 		selected_tower_label.text = "No tower selected"
 		tower_stats_label.text = "Click a placed tower to inspect it."
@@ -331,7 +333,7 @@ func _on_quit_button_pressed() -> void:
 
 func _apply_styles() -> void:
 	for panel in [top_bar, build_panel, upgrade_panel, message_panel, menu_panel, reward_panel, tower_tooltip]:
-		panel.add_theme_stylebox_override("panel", PrototypeUiTheme.panel_style())
+		panel.add_theme_stylebox_override("panel", UiTheme.panel_style())
 
 	for button in [cancel_build_button, start_wave_button, upgrade_tower_button, sell_tower_button, menu_button, resume_button, new_game_button, restart_button, quit_button]:
 		_style_button(button)
@@ -348,25 +350,25 @@ func _apply_styles() -> void:
 		button.set_meta("speed", [1.0, 2.0, 4.0][index])
 		_style_button(button)
 
-	title_label.add_theme_color_override("font_color", PrototypeUiTheme.TEXT_COLOR)
+	title_label.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
 	title_label.add_theme_font_size_override("font_size", 20)
-	build_title.add_theme_color_override("font_color", PrototypeUiTheme.TEXT_COLOR)
+	build_title.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
 	build_title.add_theme_font_size_override("font_size", 18)
-	upgrade_title.add_theme_color_override("font_color", PrototypeUiTheme.TEXT_COLOR)
+	upgrade_title.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
 	upgrade_title.add_theme_font_size_override("font_size", 18)
-	selected_tower_label.add_theme_color_override("font_color", PrototypeUiTheme.TEXT_COLOR)
-	tower_stats_label.add_theme_color_override("font_color", PrototypeUiTheme.MUTED_TEXT_COLOR)
-	message_title.add_theme_color_override("font_color", PrototypeUiTheme.TEXT_COLOR)
+	selected_tower_label.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
+	tower_stats_label.add_theme_color_override("font_color", UiTheme.MUTED_TEXT_COLOR)
+	message_title.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
 	message_title.add_theme_font_size_override("font_size", 18)
-	message_label.add_theme_color_override("font_color", PrototypeUiTheme.TEXT_COLOR)
+	message_label.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
 	message_label.add_theme_font_size_override("font_size", 15)
-	menu_title.add_theme_color_override("font_color", PrototypeUiTheme.TEXT_COLOR)
+	menu_title.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
 	menu_title.add_theme_font_size_override("font_size", 24)
-	reward_title.add_theme_color_override("font_color", PrototypeUiTheme.TEXT_COLOR)
+	reward_title.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
 	reward_title.add_theme_font_size_override("font_size", 24)
-	tower_tooltip_title.add_theme_color_override("font_color", PrototypeUiTheme.VALUE_TEXT_COLOR)
+	tower_tooltip_title.add_theme_color_override("font_color", UiTheme.VALUE_TEXT_COLOR)
 	tower_tooltip_title.add_theme_font_size_override("font_size", 17)
-	tower_tooltip_body.add_theme_color_override("font_color", PrototypeUiTheme.TEXT_COLOR)
+	tower_tooltip_body.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
 	tower_tooltip_body.add_theme_font_size_override("font_size", 14)
 	_style_stat_labels()
 
@@ -389,20 +391,20 @@ func _style_stat_labels() -> void:
 				continue
 
 			if label.name == "Value":
-				label.add_theme_color_override("font_color", PrototypeUiTheme.VALUE_TEXT_COLOR)
+				label.add_theme_color_override("font_color", UiTheme.VALUE_TEXT_COLOR)
 				label.add_theme_font_size_override("font_size", 20)
 			else:
-				label.add_theme_color_override("font_color", PrototypeUiTheme.MUTED_TEXT_COLOR)
+				label.add_theme_color_override("font_color", UiTheme.MUTED_TEXT_COLOR)
 				label.add_theme_font_size_override("font_size", 12)
 
 
 func _style_button(button: Button) -> void:
-	button.add_theme_stylebox_override("normal", PrototypeUiTheme.button_style(PrototypeUiTheme.BUTTON_COLOR))
-	button.add_theme_stylebox_override("hover", PrototypeUiTheme.button_style(PrototypeUiTheme.BUTTON_HOVER_COLOR))
-	button.add_theme_stylebox_override("pressed", PrototypeUiTheme.button_style(PrototypeUiTheme.BUTTON_HOVER_COLOR.darkened(0.12)))
-	button.add_theme_stylebox_override("disabled", PrototypeUiTheme.button_style(PrototypeUiTheme.BUTTON_DISABLED_COLOR))
-	button.add_theme_color_override("font_color", PrototypeUiTheme.TEXT_COLOR)
-	button.add_theme_color_override("font_disabled_color", PrototypeUiTheme.MUTED_TEXT_COLOR)
+	button.add_theme_stylebox_override("normal", UiTheme.button_style(UiTheme.BUTTON_COLOR))
+	button.add_theme_stylebox_override("hover", UiTheme.button_style(UiTheme.BUTTON_HOVER_COLOR))
+	button.add_theme_stylebox_override("pressed", UiTheme.button_style(UiTheme.BUTTON_HOVER_COLOR.darkened(0.12)))
+	button.add_theme_stylebox_override("disabled", UiTheme.button_style(UiTheme.BUTTON_DISABLED_COLOR))
+	button.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
+	button.add_theme_color_override("font_disabled_color", UiTheme.MUTED_TEXT_COLOR)
 	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 
 

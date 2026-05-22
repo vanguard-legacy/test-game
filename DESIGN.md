@@ -81,7 +81,7 @@ Stylized realism inspired by games such as The Sims, Valheim, and Subnautica:
 - Vampire Survivors: escalating pressure and satisfying enemy volume
 - Dota 2 Crownfall/Crown of Thorns inspiration: fantasy tone, progression flavor, and event-like presentation
 
-## Initial Prototype Target
+## Initial Playable Target
 
 1. One small 3D map with a start, exit, and one elevated area.
 2. One enemy type that follows a path to the exit.
@@ -90,9 +90,9 @@ Stylized realism inspired by games such as The Sims, Valheim, and Subnautica:
 5. Basic wave spawning.
 6. A simple score value.
 
-The prototype should prove that height, width, and 3D placement are worth building the rest of the game around.
+The first playable slice should prove that height, width, and 3D placement are worth building the rest of the game around.
 
-## Current Prototype Direction
+## Current Game Direction
 
 - Procedural terrain should keep moving toward smooth, readable height changes rather than blocky test geometry.
 - Enemy navigation should be map-driven where possible, with enemies asking the level for a path to the exit.
@@ -100,4 +100,4 @@ The prototype should prove that height, width, and 3D placement are worth buildi
 - Scene assets should own visuals; scripts should focus on behavior.
 - Camera control should support strategy-game inspection: edge/keyboard panning, mouse drag panning, rotation, and zoom.
 - Run progression should make tower choices feel like draft picks: XP rewards can unlock new tower types or improve the full tower loadout.
-- `CHANGELOG.md` should be updated whenever prototype direction, systems, assets, or validation expectations meaningfully change.
+- `CHANGELOG.md` should be updated whenever game direction, systems, assets, or validation expectations meaningfully change.

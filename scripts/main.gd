@@ -6,27 +6,32 @@ const RewardDefinition := preload("res://scripts/reward_definition.gd")
 const RunState := preload("res://scripts/run_state.gd")
 const BuildPlacementResult := preload("res://scripts/build_placement_result.gd")
 const GameClock := preload("res://scripts/game_clock.gd")
+const LevelMap := preload("res://scripts/level_map.gd")
+const TowerPlacement := preload("res://scripts/tower_placement.gd")
+const Hud := preload("res://scripts/hud.gd")
+const Enemy := preload("res://scripts/enemy.gd")
+const Tower := preload("res://scripts/tower.gd")
 
 const TOWER_SCREEN_PICK_RADIUS: float = 52.0
 const TOWER_GROUND_PICK_RADIUS: float = 0.95
 
-# Scene coordinator for the prototype. Main wires scenes together and translates
+# Scene coordinator for the game. Main wires scenes together and translates
 # user intent into gameplay actions, while balance, run state, HUD formatting,
 # and per-node behavior stay in focused scripts.
 
 @export var enemy_scene: PackedScene
 @export var tower_scene: PackedScene
 
-@onready var level_map: PrototypeLevelMap = $LevelMap
-@onready var tower_placement: PrototypeTowerPlacement = $TowerPlacement
-@onready var hud: PrototypeHud = $Hud
+@onready var level_map: LevelMap = $LevelMap
+@onready var tower_placement: TowerPlacement = $TowerPlacement
+@onready var hud: Hud = $Hud
 @onready var enemy_container: Node3D = $Enemies
 @onready var tower_container: Node3D = $Towers
 
-var enemies: Array[PrototypeEnemy] = []
-var towers: Array[PrototypeTower] = []
+var enemies: Array[Enemy] = []
+var towers: Array[Tower] = []
 var run_state: RunState = RunState.new()
-var selected_tower: PrototypeTower = null
+var selected_tower: Tower = null
 var selected_tower_id: String = GameBalance.TOWER_GWIZARD
 var active_reward_choices: Array[RewardDefinition] = []
 var game_clock: GameClock = GameClock.new()
@@ -127,7 +132,7 @@ func _spawn_wave_enemies(delta: float) -> void:
 
 
 func _spawn_enemy(enemy_id: String) -> void:
-	var enemy := enemy_scene.instantiate() as PrototypeEnemy
+	var enemy := enemy_scene.instantiate() as Enemy
 	enemy_container.add_child(enemy)
 	enemy.setup(level_map.get_enemy_path(), run_state.wave, GameBalance.get_enemy_definition(enemy_id))
 	enemy.reached_exit.connect(_on_enemy_reached_exit)
@@ -135,7 +140,7 @@ func _spawn_enemy(enemy_id: String) -> void:
 	enemies.append(enemy)
 
 
-func _on_enemy_reached_exit(enemy: PrototypeEnemy) -> void:
+func _on_enemy_reached_exit(enemy: Enemy) -> void:
 	enemies.erase(enemy)
 	enemy.queue_free()
 	run_state.lives -= 1
@@ -145,7 +150,7 @@ func _on_enemy_reached_exit(enemy: PrototypeEnemy) -> void:
 		_game_over()
 
 
-func _on_enemy_defeated(enemy: PrototypeEnemy) -> void:
+func _on_enemy_defeated(enemy: Enemy) -> void:
 	enemies.erase(enemy)
 	enemy.queue_free()
 	run_state.score += enemy.score_reward
@@ -208,7 +213,7 @@ func _on_tower_placement_confirmed(placement_position: Vector3) -> void:
 		tower_placement.cancel_placement()
 		return
 
-	var tower := tower_scene.instantiate() as PrototypeTower
+	var tower := tower_scene.instantiate() as Tower
 	tower_container.add_child(tower)
 	tower.setup(selected_tower_id, run_state.tower_modifiers)
 	tower.global_position = placement_position
@@ -405,7 +410,7 @@ func _get_tower_positions() -> Array[Vector3]:
 	return positions
 
 
-func _select_tower(tower: PrototypeTower) -> void:
+func _select_tower(tower: Tower) -> void:
 	if selected_tower != null and is_instance_valid(selected_tower):
 		selected_tower.set_selected(false)
 
@@ -424,7 +429,7 @@ func _clear_selected_tower() -> void:
 	hud.update_selected_tower(null, run_state.gold)
 
 
-func _find_tower_at_mouse() -> PrototypeTower:
+func _find_tower_at_mouse() -> Tower:
 	var camera := level_map.get_active_camera()
 	if camera == null:
 		return null
@@ -448,8 +453,8 @@ func _find_tower_at_mouse() -> PrototypeTower:
 	return null
 
 
-func _find_tower_near_screen_position(camera: Camera3D, mouse_position: Vector2) -> PrototypeTower:
-	var closest_tower: PrototypeTower = null
+func _find_tower_near_screen_position(camera: Camera3D, mouse_position: Vector2) -> Tower:
+	var closest_tower: Tower = null
 	var closest_distance := TOWER_SCREEN_PICK_RADIUS
 	for tower in towers:
 		if not is_instance_valid(tower):
