@@ -65,11 +65,12 @@ void fragment() {
 }
 """
 
-const GROUND_FOG_SHADER_CODE: String = """
+const FOG_BANK_SHADER_CODE: String = """
 shader_type spatial;
-render_mode unshaded, blend_mix, depth_draw_alpha_prepass, cull_disabled;
+render_mode unshaded, blend_mix, depth_draw_never, cull_disabled;
 
 varying vec3 world_position;
+varying vec3 local_position;
 
 float hash(vec2 point) {
 	return fract(sin(dot(point, vec2(41.7, 289.3))) * 19341.37);
@@ -88,15 +89,19 @@ float value_noise(vec2 point) {
 
 void vertex() {
 	world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	local_position = VERTEX;
 }
 
 void fragment() {
-	vec2 centered_uv = UV * 2.0 - vec2(1.0);
-	float radial_fade = 1.0 - smoothstep(0.34, 1.0, length(centered_uv));
-	float broken_edge = value_noise(world_position.xz * 0.42) * 0.55 + value_noise(world_position.xz * 1.2) * 0.25;
-	float mist_alpha = radial_fade * smoothstep(0.18, 0.84, broken_edge);
-	ALBEDO = vec3(0.10, 0.14, 0.13);
-	ALPHA = mist_alpha * 0.34;
+	float body = 1.0 - smoothstep(0.26, 1.0, length(local_position));
+	float underbelly = 1.0 - smoothstep(-0.18, 0.92, local_position.y);
+	float broad_noise = value_noise(world_position.xz * 0.18 + TIME * 0.015);
+	float torn_noise = value_noise(world_position.xz * 0.62 - TIME * 0.025);
+	float rolling_noise = broad_noise * 0.68 + torn_noise * 0.32;
+	float rim = pow(1.0 - clamp(dot(normalize(NORMAL), normalize(VIEW)), 0.0, 1.0), 1.6);
+	float opacity = body * underbelly * smoothstep(0.30, 0.88, rolling_noise);
+	ALBEDO = mix(vec3(0.075, 0.105, 0.095), vec3(0.17, 0.20, 0.18), rim);
+	ALPHA = opacity * (0.18 + rim * 0.12);
 }
 """
 
@@ -150,12 +155,12 @@ static func road() -> Material:
 	return material
 
 
-static func ground_fog() -> Material:
+static func fog_bank() -> Material:
 	if DisplayServer.get_name() == "headless":
 		return transparent(Color(0.08, 0.10, 0.09, 0.22))
 
 	var shader := Shader.new()
-	shader.code = GROUND_FOG_SHADER_CODE
+	shader.code = FOG_BANK_SHADER_CODE
 	var material := ShaderMaterial.new()
 	material.shader = shader
 	return material

@@ -39,7 +39,7 @@ var generation_seed: int = 0
 
 var terrain_material := Materials.terrain()
 var road_material := Materials.road()
-var ground_fog_material := Materials.ground_fog()
+var fog_bank_material := Materials.fog_bank()
 
 
 func _ready() -> void:
@@ -176,7 +176,7 @@ func _build_world() -> void:
 	_add_terrain_mesh()
 	_add_road_mesh()
 	_add_atmosphere()
-	_add_ground_fog_patches()
+	_add_fog_banks()
 	_add_marker("StartMarker", get_start_position(), Color(0.25, 0.58, 0.28))
 	_add_marker("ExitGate", get_exit_position(), Color(0.16, 0.12, 0.10))
 
@@ -359,6 +359,11 @@ func _add_atmosphere() -> void:
 	environment.fog_light_energy = 0.45
 	environment.fog_density = 0.018
 	environment.fog_sky_affect = 0.72
+	environment.volumetric_fog_enabled = true
+	environment.volumetric_fog_density = 0.022
+	environment.volumetric_fog_albedo = Color(0.15, 0.19, 0.17)
+	environment.volumetric_fog_length = 48.0
+	environment.volumetric_fog_detail_spread = 1.9
 
 	var world_environment := WorldEnvironment.new()
 	world_environment.name = "Atmosphere"
@@ -366,27 +371,44 @@ func _add_atmosphere() -> void:
 	add_child(world_environment)
 
 
-func _add_ground_fog_patches() -> void:
+func _add_fog_banks() -> void:
+	var fog_root := Node3D.new()
+	fog_root.name = "FogBanks"
+	add_child(fog_root)
+
 	var rng := RandomNumberGenerator.new()
 	rng.seed = generation_seed + 991
-	for index in range(18):
+	for index in range(16):
 		var angle := rng.randf_range(0.0, TAU)
-		var distance_from_center := rng.randf_range(PLAYABLE_HALF_SIZE + 6.0, MAP_HALF_SIZE - 3.0)
+		var distance_from_center := rng.randf_range(PLAYABLE_HALF_SIZE + 5.5, MAP_HALF_SIZE - 4.0)
 		var ground_point := Vector2(cos(angle), sin(angle)) * distance_from_center
-		_add_ground_fog_patch(index, ground_point, rng.randf_range(6.0, 14.0), rng.randf_range(0.0, 360.0))
+		_add_fog_bank_cluster(fog_root, index, ground_point, rng)
 
 
-func _add_ground_fog_patch(index: int, ground_point: Vector2, patch_size: float, rotation_degrees_y: float) -> void:
-	var patch := MeshInstance3D.new()
-	patch.name = "GroundFogPatch%d" % index
-	patch.position = _world_from_ground(ground_point, 0.10)
-	patch.rotation_degrees = Vector3(0.0, rotation_degrees_y, 0.0)
+func _add_fog_bank_cluster(parent: Node3D, index: int, ground_point: Vector2, rng: RandomNumberGenerator) -> void:
+	var cluster := Node3D.new()
+	cluster.name = "FogBank%d" % index
+	parent.add_child(cluster)
 
-	var mesh := PlaneMesh.new()
-	mesh.size = Vector2(patch_size, patch_size * 0.62)
-	patch.mesh = mesh
-	patch.material_override = ground_fog_material
-	add_child(patch)
+	var puff_count := rng.randi_range(3, 5)
+	for puff_index in range(puff_count):
+		var offset := Vector2(rng.randf_range(-2.8, 2.8), rng.randf_range(-2.4, 2.4))
+		var puff_point := ground_point + offset
+		var puff := MeshInstance3D.new()
+		puff.name = "Puff%d" % puff_index
+		puff.position = _world_from_ground(puff_point, rng.randf_range(0.48, 1.2))
+		puff.rotation_degrees = Vector3(rng.randf_range(-3.0, 3.0), rng.randf_range(0.0, 360.0), rng.randf_range(-4.0, 4.0))
+		puff.scale = Vector3(rng.randf_range(3.2, 6.8), rng.randf_range(0.42, 0.95), rng.randf_range(2.2, 5.4))
+
+		var mesh := SphereMesh.new()
+		mesh.radius = 1.0
+		mesh.height = 2.0
+		mesh.radial_segments = 24
+		mesh.rings = 12
+		puff.mesh = mesh
+		puff.material_override = fog_bank_material
+		cluster.add_child(puff)
+
 
 
 func _world_from_ground(point: Vector2, y_offset: float = 0.0) -> Vector3:

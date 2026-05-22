@@ -215,7 +215,7 @@ Seeded procedural map owner. It creates broad surrounding terrain, a central gen
 - `find_build_position(camera, mouse_position, occupied_positions)`: Converts cursor position into a tower build result with validation.
 - `find_terrain_position(camera, mouse_position)`: Raycasts against the procedural heightfield using camera projection.
 - `get_tower_terrain_bonus(build_position)`: Converts a build position into a tower height bonus.
-- `_build_world()`: Creates the camera, camera controller, sun, terrain mesh, road mesh, atmosphere, fog patches, and start/exit markers.
+- `_build_world()`: Creates the camera, camera controller, sun, terrain mesh, road mesh, atmosphere, fog banks, and start/exit markers.
 - `_configure_generation()`: Applies the map seed to terrain noise, detail noise, route generation, and terrain features.
 - `_generate_road_points(rng)`: Builds a deterministic winding road from start to exit inside the playable area.
 - `_generate_terrain_features(rng)`: Builds deterministic hill and valley features that blend into the terrain heightfield.
@@ -226,9 +226,9 @@ Seeded procedural map owner. It creates broad surrounding terrain, a central gen
 - `_add_road_quad(surface, a, b, c, d)`: Adds two colored triangles for one road cell.
 - `_add_colored_vertex(surface, vertex, color)`: Adds one vertex with vertex color to a surface.
 - `_add_marker(node_name, marker_position, color)`: Creates a start or exit marker mesh.
-- `_add_atmosphere()`: Adds world environment fog, ambient light, and background color for distance atmosphere.
-- `_add_ground_fog_patches()`: Places seeded, ground-hugging fog patches around the outer terrain.
-- `_add_ground_fog_patch(index, ground_point, patch_size, rotation_degrees_y)`: Creates one shader-softened ground mist patch.
+- `_add_atmosphere()`: Adds world environment fog, volumetric fog, ambient light, and background color for distance atmosphere.
+- `_add_fog_banks()`: Places seeded, clustered fog banks around the outer terrain.
+- `_add_fog_bank_cluster(parent, index, ground_point, rng)`: Creates one overlapping cluster of shader-softened volumetric-style mist puffs.
 - `_world_from_ground(point, y_offset)`: Converts an X/Z ground point into a 3D world position at generated height.
 - `_height_at(point)`: Calculates blended terrain and road height for a ground point.
 - `_rolling_height_at(point)`: Calculates the seed-driven terrain height before road smoothing is applied.
@@ -309,7 +309,7 @@ Shared 3D material and shader factory for terrain, roads, tower visuals, enemies
 - `vertex_colored()`: Creates a material that uses mesh vertex colors as albedo.
 - `terrain()`: Returns the terrain shader material, or a vertex-color fallback in headless mode.
 - `road()`: Returns the road shader material, or a vertex-color fallback in headless mode.
-- `ground_fog()`: Returns the soft noisy ground-fog shader material, or an alpha fallback in headless mode.
+- `fog_bank()`: Returns the noisy volumetric-style fog bank shader material, or an alpha fallback in headless mode.
 
 ### `scripts/reward_definition.gd`
 
