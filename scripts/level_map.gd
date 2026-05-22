@@ -39,6 +39,7 @@ var generation_seed: int = 0
 
 var terrain_material := Materials.terrain()
 var road_material := Materials.road()
+var ground_fog_material := Materials.ground_fog()
 
 
 func _ready() -> void:
@@ -174,7 +175,8 @@ func _build_world() -> void:
 
 	_add_terrain_mesh()
 	_add_road_mesh()
-	_add_edge_haze()
+	_add_atmosphere()
+	_add_ground_fog_patches()
 	_add_marker("StartMarker", get_start_position(), Color(0.25, 0.58, 0.28))
 	_add_marker("ExitGate", get_exit_position(), Color(0.16, 0.12, 0.10))
 
@@ -345,31 +347,46 @@ func _add_marker(node_name: String, marker_position: Vector3, color: Color) -> v
 	add_child(marker)
 
 
-func _add_edge_haze() -> void:
-	var haze_material := Materials.transparent(Color(0.04, 0.07, 0.06, 0.34))
-	haze_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	haze_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+func _add_atmosphere() -> void:
+	var environment := Environment.new()
+	environment.background_mode = Environment.BG_COLOR
+	environment.background_color = Color(0.33, 0.39, 0.38)
+	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	environment.ambient_light_color = Color(0.31, 0.37, 0.34)
+	environment.ambient_light_energy = 0.38
+	environment.fog_enabled = true
+	environment.fog_light_color = Color(0.15, 0.20, 0.18)
+	environment.fog_light_energy = 0.45
+	environment.fog_density = 0.018
+	environment.fog_sky_affect = 0.72
 
-	var haze_height := 9.0
-	var haze_width := MAP_HALF_SIZE * 2.0
-	var haze_distance := MAP_HALF_SIZE - 1.0
-	_add_haze_wall("NorthHaze", Vector3(0.0, haze_height * 0.5, -haze_distance), Vector3(0.0, 0.0, 0.0), Vector2(haze_width, haze_height), haze_material)
-	_add_haze_wall("SouthHaze", Vector3(0.0, haze_height * 0.5, haze_distance), Vector3(0.0, 180.0, 0.0), Vector2(haze_width, haze_height), haze_material)
-	_add_haze_wall("WestHaze", Vector3(-haze_distance, haze_height * 0.5, 0.0), Vector3(0.0, 90.0, 0.0), Vector2(haze_width, haze_height), haze_material)
-	_add_haze_wall("EastHaze", Vector3(haze_distance, haze_height * 0.5, 0.0), Vector3(0.0, -90.0, 0.0), Vector2(haze_width, haze_height), haze_material)
+	var world_environment := WorldEnvironment.new()
+	world_environment.name = "Atmosphere"
+	world_environment.environment = environment
+	add_child(world_environment)
 
 
-func _add_haze_wall(node_name: String, haze_position: Vector3, rotation: Vector3, size: Vector2, material: Material) -> void:
-	var haze := MeshInstance3D.new()
-	haze.name = node_name
-	haze.position = haze_position
-	haze.rotation_degrees = rotation
+func _add_ground_fog_patches() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = generation_seed + 991
+	for index in range(18):
+		var angle := rng.randf_range(0.0, TAU)
+		var distance_from_center := rng.randf_range(PLAYABLE_HALF_SIZE + 6.0, MAP_HALF_SIZE - 3.0)
+		var ground_point := Vector2(cos(angle), sin(angle)) * distance_from_center
+		_add_ground_fog_patch(index, ground_point, rng.randf_range(6.0, 14.0), rng.randf_range(0.0, 360.0))
+
+
+func _add_ground_fog_patch(index: int, ground_point: Vector2, patch_size: float, rotation_degrees_y: float) -> void:
+	var patch := MeshInstance3D.new()
+	patch.name = "GroundFogPatch%d" % index
+	patch.position = _world_from_ground(ground_point, 0.10)
+	patch.rotation_degrees = Vector3(0.0, rotation_degrees_y, 0.0)
 
 	var mesh := PlaneMesh.new()
-	mesh.size = size
-	haze.mesh = mesh
-	haze.material_override = material
-	add_child(haze)
+	mesh.size = Vector2(patch_size, patch_size * 0.62)
+	patch.mesh = mesh
+	patch.material_override = ground_fog_material
+	add_child(patch)
 
 
 func _world_from_ground(point: Vector2, y_offset: float = 0.0) -> Vector3:
@@ -411,6 +428,8 @@ func _terrain_color_at(point: Vector2) -> Color:
 	var color := lowland.lerp(meadow, smoothstep(-0.35, 0.7, height))
 	color = color.lerp(high_grass, smoothstep(0.55, 1.25, height) * 0.52)
 	color = color.lerp(stone, smoothstep(0.36, 0.86, slope))
+	var edge_mist := _edge_atmosphere_amount(point)
+	color = color.lerp(Color(0.045, 0.075, 0.065), edge_mist * 0.82)
 	return color
 
 
@@ -419,7 +438,13 @@ func _road_color_at(point: Vector2) -> Color:
 	var edge_ratio := clampf(road_info.distance / maxf(0.01, _road_half_width(road_info.progress)), 0.0, 1.0)
 	var center := Color(0.36, 0.27, 0.17)
 	var edge := Color(0.20, 0.16, 0.11)
-	return center.lerp(edge, smoothstep(0.48, 1.0, edge_ratio))
+	var color := center.lerp(edge, smoothstep(0.48, 1.0, edge_ratio))
+	return color.lerp(Color(0.06, 0.055, 0.045), _edge_atmosphere_amount(point) * 0.75)
+
+
+func _edge_atmosphere_amount(point: Vector2) -> float:
+	var distance_to_edge: float = maxf(absf(point.x), absf(point.y))
+	return smoothstep(PLAYABLE_HALF_SIZE + 7.0, MAP_HALF_SIZE - 1.5, distance_to_edge)
 
 
 func _road_height(progress: float) -> float:

@@ -199,7 +199,7 @@ No functions.
 
 ### `scripts/level_map.gd`
 
-Seeded procedural map owner. It creates broad surrounding terrain, a central generated road, route graph, start/exit markers, edge haze, camera, and tower placement queries.
+Seeded procedural map owner. It creates broad surrounding terrain, a central generated road, route graph, start/exit markers, atmospheric fog, camera, and tower placement queries.
 
 - `_ready()`: Defers generation until the main menu starts or restarts a run.
 - `generate_map(seed, progress_callback)`: Rebuilds the seeded map, reports loading progress, and refreshes the cached enemy path.
@@ -215,7 +215,7 @@ Seeded procedural map owner. It creates broad surrounding terrain, a central gen
 - `find_build_position(camera, mouse_position, occupied_positions)`: Converts cursor position into a tower build result with validation.
 - `find_terrain_position(camera, mouse_position)`: Raycasts against the procedural heightfield using camera projection.
 - `get_tower_terrain_bonus(build_position)`: Converts a build position into a tower height bonus.
-- `_build_world()`: Creates the camera, camera controller, sun, terrain mesh, road mesh, and start/exit markers.
+- `_build_world()`: Creates the camera, camera controller, sun, terrain mesh, road mesh, atmosphere, fog patches, and start/exit markers.
 - `_configure_generation()`: Applies the map seed to terrain noise, detail noise, route generation, and terrain features.
 - `_generate_road_points(rng)`: Builds a deterministic winding road from start to exit inside the playable area.
 - `_generate_terrain_features(rng)`: Builds deterministic hill and valley features that blend into the terrain heightfield.
@@ -226,13 +226,15 @@ Seeded procedural map owner. It creates broad surrounding terrain, a central gen
 - `_add_road_quad(surface, a, b, c, d)`: Adds two colored triangles for one road cell.
 - `_add_colored_vertex(surface, vertex, color)`: Adds one vertex with vertex color to a surface.
 - `_add_marker(node_name, marker_position, color)`: Creates a start or exit marker mesh.
-- `_add_edge_haze()`: Adds distant dark translucent boundary planes so the larger terrain fades before the skybox dominates.
-- `_add_haze_wall(node_name, haze_position, rotation, size, material)`: Creates one distant edge-haze wall.
+- `_add_atmosphere()`: Adds world environment fog, ambient light, and background color for distance atmosphere.
+- `_add_ground_fog_patches()`: Places seeded, ground-hugging fog patches around the outer terrain.
+- `_add_ground_fog_patch(index, ground_point, patch_size, rotation_degrees_y)`: Creates one shader-softened ground mist patch.
 - `_world_from_ground(point, y_offset)`: Converts an X/Z ground point into a 3D world position at generated height.
 - `_height_at(point)`: Calculates blended terrain and road height for a ground point.
 - `_rolling_height_at(point)`: Calculates the seed-driven terrain height before road smoothing is applied.
 - `_terrain_color_at(point)`: Picks terrain vertex color from height and local slope.
 - `_road_color_at(point)`: Picks road vertex color from distance to road edge.
+- `_edge_atmosphere_amount(point)`: Calculates how much terrain and road color should fade into the edge atmosphere.
 - `_road_height(progress)`: Evaluates road elevation along route progress.
 - `_road_half_width(progress)`: Evaluates changing road half-width along route progress.
 - `_is_road(point)`: Returns whether a ground point lies inside the road width.
@@ -307,6 +309,7 @@ Shared 3D material and shader factory for terrain, roads, tower visuals, enemies
 - `vertex_colored()`: Creates a material that uses mesh vertex colors as albedo.
 - `terrain()`: Returns the terrain shader material, or a vertex-color fallback in headless mode.
 - `road()`: Returns the road shader material, or a vertex-color fallback in headless mode.
+- `ground_fog()`: Returns the soft noisy ground-fog shader material, or an alpha fallback in headless mode.
 
 ### `scripts/reward_definition.gd`
 

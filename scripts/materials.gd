@@ -65,6 +65,41 @@ void fragment() {
 }
 """
 
+const GROUND_FOG_SHADER_CODE: String = """
+shader_type spatial;
+render_mode unshaded, blend_mix, depth_draw_alpha_prepass, cull_disabled;
+
+varying vec3 world_position;
+
+float hash(vec2 point) {
+	return fract(sin(dot(point, vec2(41.7, 289.3))) * 19341.37);
+}
+
+float value_noise(vec2 point) {
+	vec2 cell = floor(point);
+	vec2 local = fract(point);
+	vec2 curve = local * local * (3.0 - 2.0 * local);
+	float a = hash(cell);
+	float b = hash(cell + vec2(1.0, 0.0));
+	float c = hash(cell + vec2(0.0, 1.0));
+	float d = hash(cell + vec2(1.0, 1.0));
+	return mix(mix(a, b, curve.x), mix(c, d, curve.x), curve.y);
+}
+
+void vertex() {
+	world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
+
+void fragment() {
+	vec2 centered_uv = UV * 2.0 - vec2(1.0);
+	float radial_fade = 1.0 - smoothstep(0.34, 1.0, length(centered_uv));
+	float broken_edge = value_noise(world_position.xz * 0.42) * 0.55 + value_noise(world_position.xz * 1.2) * 0.25;
+	float mist_alpha = radial_fade * smoothstep(0.18, 0.84, broken_edge);
+	ALBEDO = vec3(0.10, 0.14, 0.13);
+	ALPHA = mist_alpha * 0.34;
+}
+"""
+
 
 static func standard(color: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
@@ -110,6 +145,17 @@ static func road() -> Material:
 
 	var shader := Shader.new()
 	shader.code = ROAD_SHADER_CODE
+	var material := ShaderMaterial.new()
+	material.shader = shader
+	return material
+
+
+static func ground_fog() -> Material:
+	if DisplayServer.get_name() == "headless":
+		return transparent(Color(0.08, 0.10, 0.09, 0.22))
+
+	var shader := Shader.new()
+	shader.code = GROUND_FOG_SHADER_CODE
 	var material := ShaderMaterial.new()
 	material.shader = shader
 	return material

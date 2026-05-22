@@ -5,6 +5,12 @@ Track meaningful project changes here so future work has a clear history. Use sh
 Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjusted for this active game project.
 Keep dated sections in reverse chronological order. Version headings should point to the latest git tag for each day in the form `YYYY-MM-DD.N`.
 
+## [2026-05-22.5]
+
+- Replaced the visible border fog wall planes with environment fog and soft ground mist patches.
+- Added an edge-atmosphere color falloff to terrain and road colors so distant terrain fades naturally.
+- Added a reusable ground-fog shader material with noisy radial alpha instead of rectangular transparent geometry.
+
 ## [2026-05-22.4]
 
 - Added a main menu seed field and loading progress display for terrain generation.
@@ -92,6 +98,7 @@ Keep dated sections in reverse chronological order. Version headings should poin
 - Added multiple enemy archetypes, selectable tower upgrades, and a start/pause/restart menu overlay.
 - Refactored balance data, wave definitions, and run progress out of `main.gd` into focused helper classes.
 
+[2026-05-22.5]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.5
 [2026-05-22.4]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.4
 [2026-05-22.3]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.3
 [2026-05-22.2]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.2
