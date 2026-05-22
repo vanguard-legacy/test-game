@@ -8,7 +8,7 @@ signal speed_changed(speed: float)
 # applies the global Engine time scale.
 
 const DEFAULT_SPEED: float = 1.0
-const ALLOWED_SPEEDS: Array[float] = [1.0, 2.0, 4.0, 8.0, 16.0]
+const ALLOWED_SPEEDS: Array[float] = [1.0, 2.0, 4.0, 8.0, 16.0, 32.0]
 
 var speed: float = DEFAULT_SPEED
 

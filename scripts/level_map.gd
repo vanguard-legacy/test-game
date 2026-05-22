@@ -23,6 +23,7 @@ const MIN_TOWER_SPACING: float = 1.25
 const MAX_BUILD_SLOPE: float = 0.55
 const FOG_DRIFT_RADIUS: float = 0.75
 const FOG_BREATH_AMOUNT: float = 0.08
+const SPAWN_HOVER_RADIUS: float = 1.15
 
 @export var map_seed: int = 20260522
 
@@ -163,6 +164,15 @@ func find_terrain_position(camera: Camera3D, mouse_position: Vector2) -> Terrain
 	var ray_origin := camera.project_ray_origin(mouse_position)
 	var ray_direction := camera.project_ray_normal(mouse_position)
 	return _find_terrain_hit(ray_origin, ray_direction)
+
+
+func is_spawn_hovered(camera: Camera3D, mouse_position: Vector2) -> bool:
+	var terrain_hit := find_terrain_position(camera, mouse_position)
+	if not terrain_hit.has_hit:
+		return false
+
+	var hit_point := Vector2(terrain_hit.position.x, terrain_hit.position.z)
+	return hit_point.distance_to(start_point) <= SPAWN_HOVER_RADIUS
 
 
 func get_tower_terrain_bonus(build_position: Vector3) -> TowerTerrainBonus:

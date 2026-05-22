@@ -51,7 +51,7 @@ Map scene root for procedural terrain, road/path generation, camera setup, and b
 
 ### `scenes/hud.tscn`
 
-Container-based HUD scene. It owns top-bar stats, 1x through 16x speed controls, auto-wave controls, build controls, tower upgrade/sell controls, command log, main menu overlay with seed/loading controls, compact reward panel, and tooltip nodes.
+Container-based HUD scene. It owns top-bar stats, 1x through 32x speed controls, auto-wave controls, build controls, tower upgrade/sell controls, command log, main menu overlay with seed/loading controls, compact reward panel, and tooltip nodes.
 
 ### `scenes/tower.tscn`
 
@@ -93,14 +93,25 @@ RTS-style camera controller for keyboard/edge panning, middle-mouse terrain-anch
 
 ### `scripts/enemy.gd`
 
-Runtime enemy actor. It follows map paths, receives damage and slow effects, and emits lifecycle signals when defeated or when it reaches the exit.
+Runtime enemy actor. It follows map paths, receives damage and slow effects, shows a health bar and damage numbers, and emits lifecycle signals when defeated or when it reaches the exit.
 
 - `_process(delta)`: Advances the enemy along its path and emits `reached_exit` when it finishes.
 - `setup(points, wave, definition)`: Applies path, wave-scaled stats, rewards, initial position, and visuals from an enemy definition.
 - `take_damage(amount)`: Reduces health and emits `defeated` when health reaches zero.
 - `apply_slow(multiplier, duration)`: Applies or refreshes a movement slow effect.
 - `_apply_enemy_visuals(definition)`: Sets the node name, scale, and mesh materials for the enemy archetype.
+- `_build_health_bar()`: Creates the world-space health bar meshes for the enemy.
+- `_make_bar_mesh(width, height)`: Creates a quad mesh for one health bar layer.
+- `_update_health_bar()`: Faces the health bar toward the active camera and scales the fill to current health.
+- `_spawn_damage_number(amount)`: Creates a floating damage label for a hit.
 - `_update_slow(delta)`: Counts down slow duration and restores normal speed when it expires.
+
+### `scripts/damage_number.gd`
+
+Floating 3D combat text spawned by enemies when they take damage.
+
+- `setup(amount, color)`: Formats the damage amount, color, outline, scale, and local starting offset.
+- `_process(delta)`: Floats, fades, scales, and frees the label after its lifetime.
 
 ### `scripts/enemy_definition.gd`
 
@@ -167,7 +178,7 @@ Presentation and input layer for the HUD. It renders view models, manages menus/
 - `hide_reward_choices()`: Closes the reward overlay.
 - `show_tower_tooltip(title, body, source)`: Shows a cursor-following tooltip from world, placement, or UI source.
 - `hide_tower_tooltip()`: Hides any tooltip and clears its source.
-- `hide_world_tower_tooltip()`: Hides tooltips that belong to world or placement hover sources.
+- `hide_world_tower_tooltip()`: Hides tooltips that belong to world, placement, or spawn hover sources.
 - `_on_tower_slot_button_pressed(slot_index)`: Emits a build request for the clicked unlocked tower slot.
 - `_on_tower_slot_mouse_entered(slot_index)`: Shows the build-slot tooltip for the hovered tower slot.
 - `_on_tower_slot_mouse_exited()`: Hides UI-sourced build-slot tooltips.
@@ -215,6 +226,7 @@ Seeded procedural map owner. It creates broad surrounding terrain, a central gen
 - `get_enemy_path()`: Returns a fresh path from start to exit for spawned enemies.
 - `find_build_position(camera, mouse_position, occupied_positions)`: Converts cursor position into a tower build result with validation.
 - `find_terrain_position(camera, mouse_position)`: Raycasts against the procedural heightfield using camera projection.
+- `is_spawn_hovered(camera, mouse_position)`: Reports whether the cursor is hovering the enemy spawn marker.
 - `get_tower_terrain_bonus(build_position)`: Converts a build position into a tower height bonus.
 - `_build_world()`: Creates the camera, camera controller, sun, terrain mesh, road mesh, atmosphere, fog banks, and start/exit markers.
 - `_configure_generation()`: Applies the map seed to terrain noise, detail noise, route generation, and terrain features.
@@ -298,6 +310,11 @@ Game coordinator. It connects map generation, placement, HUD, clock, run state, 
 - `_maybe_auto_start_next_wave()`: Starts the next wave automatically when auto-wave is enabled and the board can launch safely.
 - `_apply_tower_modifiers()`: Reapplies run-wide tower modifiers to every valid tower.
 - `_update_hovered_tower()`: Shows or hides world tower tooltips based on cursor and placement state.
+- `_is_spawn_hovered()`: Checks whether the cursor is over the generated spawn marker.
+- `_get_spawn_tooltip_title()`: Returns the spawn tooltip title for next-wave or active-wave state.
+- `_get_spawn_tooltip_body()`: Builds next-wave preview text or active-wave remaining-enemy text.
+- `_get_remaining_wave_enemy_ids()`: Combines queued and already-spawned enemies for active-wave tooltip counts.
+- `_format_enemy_counts(enemy_ids)`: Formats enemy ids into readable count lines.
 - `_sync_camera_controls()`: Enables camera controls only while gameplay can accept them.
 - `_set_game_speed(requested_speed, announce_change)`: Applies game speed through the clock, optionally logs it, and refreshes HUD.
 - `_seed_from_text(seed_text)`: Converts empty, numeric, or text seed input into a non-zero integer map seed.
@@ -433,13 +450,14 @@ Typed wave data consumed by run state and spawning code.
 
 ### `tests/stability_smoke.gd`
 
-Headless gameplay smoke test that checks finite reward drafting, starting a game, 16x speed control, auto-wave toggling, non-modal rewards, tower placement, selected-tower selling, and two wave completions.
+Headless gameplay smoke test that checks finite reward drafting, starting a game, 32x speed control, spawn tooltip text, auto-wave toggling, non-modal rewards, tower placement, selected-tower selling, and two wave completions.
 
 - `_initialize()`: Defers the smoke test until the scene tree is ready.
 - `_run_smoke()`: Orchestrates the full smoke scenario, waits for async map generation, verifies wave progress, and exits with success on `STABILITY_SMOKE_OK`.
 - `_verify_reward_choices()`: Ensures fresh reward drafting returns valid rewards and exhausted drafting returns no stipend fallback choices.
 - `_place_test_towers(main)`: Places a fixed set of towers at known ground points.
-- `_verify_game_speed(main)`: Confirms 16x and 1x speed requests update `Engine.time_scale`.
+- `_verify_game_speed(main)`: Confirms 32x and 1x speed requests update `Engine.time_scale`.
+- `_verify_spawn_tooltip(main)`: Confirms spawn tooltip text covers next-wave preview and active-wave remaining enemies.
 - `_verify_auto_start_toggle(main)`: Confirms auto-wave intent toggles gameplay state on and off.
 - `_verify_reward_overlay_non_modal(main)`: Confirms reward choices open without pausing gameplay.
 - `_verify_sell_tower(main)`: Confirms selecting and selling a non-last tower removes it and refunds gold.

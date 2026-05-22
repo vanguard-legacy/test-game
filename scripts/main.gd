@@ -579,12 +579,72 @@ func _update_hovered_tower() -> void:
 		hud.hide_world_tower_tooltip()
 		return
 
+	if _is_spawn_hovered():
+		hud.show_tower_tooltip(_get_spawn_tooltip_title(), _get_spawn_tooltip_body(), "spawn")
+		return
+
 	var tower := _find_tower_at_mouse()
 	if tower == null:
 		hud.hide_tower_tooltip()
 		return
 
 	hud.show_tower_tooltip(tower.get_display_name(), tower.get_hover_description())
+
+
+func _is_spawn_hovered() -> bool:
+	var camera := level_map.get_active_camera()
+	if camera == null:
+		return false
+
+	return level_map.is_spawn_hovered(camera, get_viewport().get_mouse_position())
+
+
+func _get_spawn_tooltip_title() -> String:
+	if run_state.wave_active:
+		return "Current Wave"
+
+	return "Next Wave"
+
+
+func _get_spawn_tooltip_body() -> String:
+	if run_state.wave_active:
+		return "Still coming:\n%s" % _format_enemy_counts(_get_remaining_wave_enemy_ids())
+
+	var next_wave := run_state.wave + 1
+	var wave_definition := GameBalance.get_wave_definition(next_wave)
+	return "%s\n%s" % [wave_definition.title, _format_enemy_counts(wave_definition.enemy_ids)]
+
+
+func _get_remaining_wave_enemy_ids() -> Array[String]:
+	var enemy_ids: Array[String] = []
+	for index in range(run_state.next_spawn_index, run_state.wave_queue.size()):
+		enemy_ids.append(run_state.wave_queue[index])
+
+	for enemy in enemies:
+		if is_instance_valid(enemy):
+			enemy_ids.append(enemy.enemy_id)
+
+	return enemy_ids
+
+
+func _format_enemy_counts(enemy_ids: Array[String]) -> String:
+	if enemy_ids.is_empty():
+		return "No enemies left."
+
+	var counts: Dictionary[String, int] = {}
+	for enemy_id in enemy_ids:
+		counts[enemy_id] = counts.get(enemy_id, 0) + 1
+
+	var lines: Array[String] = []
+	for enemy_id in [GameBalance.ENEMY_GOBBELIN, GameBalance.ENEMY_GNURUK, GameBalance.ENEMY_GNOGRE]:
+		if not counts.has(enemy_id):
+			continue
+
+		var definition := GameBalance.get_enemy_definition(enemy_id)
+		lines.append("%s x%d" % [definition.display_name, counts[enemy_id]])
+
+	return "\n".join(lines)
+
 
 
 func _sync_camera_controls() -> void:

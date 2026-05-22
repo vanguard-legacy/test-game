@@ -31,6 +31,7 @@ func _run_smoke() -> void:
 
 	_verify_game_speed(main)
 	_verify_auto_start_toggle(main)
+	_verify_spawn_tooltip(main)
 	_verify_reward_overlay_non_modal(main)
 	_place_test_towers(main)
 	_verify_sell_tower(main)
@@ -132,9 +133,9 @@ func _place_test_towers(main: Node) -> void:
 
 func _verify_game_speed(main: Node) -> void:
 	print("STABILITY_SMOKE_GAME_SPEED")
-	main._on_game_speed_requested(16.0)
-	if not is_equal_approx(Engine.time_scale, 16.0):
-		push_error("Game speed control did not set Engine.time_scale to 16x.")
+	main._on_game_speed_requested(32.0)
+	if not is_equal_approx(Engine.time_scale, 32.0):
+		push_error("Game speed control did not set Engine.time_scale to 32x.")
 		quit(1)
 		return
 
@@ -143,6 +144,28 @@ func _verify_game_speed(main: Node) -> void:
 		push_error("Game speed control did not return Engine.time_scale to 1x.")
 		quit(1)
 		return
+
+
+func _verify_spawn_tooltip(main: Node) -> void:
+	print("STABILITY_SMOKE_SPAWN_TOOLTIP")
+	var next_wave_body: String = main._get_spawn_tooltip_body()
+	if not next_wave_body.contains("Gobbelin"):
+		push_error("Next-wave spawn tooltip did not include incoming Gobbelins.")
+		quit(1)
+		return
+
+	var wave_before: int = main.run_state.wave
+	main.run_state.start_wave(GameBalance.get_wave_definition(wave_before + 1))
+	var current_wave_body: String = main._get_spawn_tooltip_body()
+	if not current_wave_body.contains("Still coming"):
+		push_error("Active-wave spawn tooltip did not switch to remaining enemies.")
+		quit(1)
+		return
+
+	main.run_state.wave = wave_before
+	main.run_state.wave_active = false
+	main.run_state.wave_queue.clear()
+	main.run_state.next_spawn_index = 0
 
 
 func _verify_auto_start_toggle(main: Node) -> void:
