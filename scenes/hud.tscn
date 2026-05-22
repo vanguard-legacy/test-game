@@ -358,12 +358,12 @@ text = "Resume"
 [node name="NewGameButton" type="Button" parent="Root/MenuOverlay/MenuPanel/Margin/Stack"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "New Game"
+text = "Generate New Map"
 
 [node name="RestartButton" type="Button" parent="Root/MenuOverlay/MenuPanel/Margin/Stack"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "Restart Run"
+text = "Restart Same Seed"
 
 [node name="QuitButton" type="Button" parent="Root/MenuOverlay/MenuPanel/Margin/Stack"]
 custom_minimum_size = Vector2(0, 44)

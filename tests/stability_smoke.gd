@@ -20,7 +20,7 @@ func _run_smoke() -> void:
 	await process_frame
 
 	print("STABILITY_SMOKE_NEW_GAME")
-	main._on_new_game_requested()
+	await main._on_new_game_requested("20260522")
 	main.run_state.gold = 10000
 	main.run_state.owned_tower_ids.clear()
 	main.run_state.owned_tower_ids.append(GameBalance.TOWER_GWIZARD)
@@ -52,6 +52,11 @@ func _run_smoke() -> void:
 		print("STABILITY_SMOKE_WAVE_DONE %d enemies=%d" % [main.run_state.wave, main.enemies.size()])
 
 	await process_frame
+	if main.run_state.wave != 2:
+		push_error("Smoke expected to complete wave 2, but ended on wave %d." % main.run_state.wave)
+		quit(1)
+		return
+
 	print("STABILITY_SMOKE_OK wave=%d score=%d gold=%d" % [main.run_state.wave, main.run_state.score, main.run_state.gold])
 	quit(0)
 

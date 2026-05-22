@@ -51,7 +51,7 @@ Map scene root for procedural terrain, road/path generation, camera setup, and b
 
 ### `scenes/hud.tscn`
 
-Container-based HUD scene. It owns top-bar stats, speed buttons, build controls, tower upgrade/sell controls, command log, main menu overlay, reward overlay, and tooltip nodes.
+Container-based HUD scene. It owns top-bar stats, speed buttons, build controls, tower upgrade/sell controls, command log, main menu overlay with seed/loading controls, reward overlay, and tooltip nodes.
 
 ### `scenes/tower.tscn`
 
@@ -146,7 +146,8 @@ Gameplay-side clock boundary for allowed game speed values and `Engine.time_scal
 
 Presentation and input layer for the HUD. It renders view models, manages menus/reward overlays/tooltips, styles controls, and emits user intent without mutating run state.
 
-- `_ready()`: Sets process mode, caches button groups, applies styles, connects signals, and initializes selection UI.
+- `_ready()`: Sets process mode, creates dynamic menu seed/loading controls, caches button groups, applies styles, connects signals, and initializes selection UI.
+- `_build_menu_seed_controls()`: Adds the current-seed label, seed input, loading label, and loading progress bar to the menu stack.
 - `_cache_button_groups()`: Stores related tower-slot, reward-choice, and speed buttons in arrays.
 - `_connect_button_signals()`: Wires all HUD buttons and hover events to local handlers.
 - `_process(_delta)`: Keeps the tooltip following the cursor while visible.
@@ -158,7 +159,10 @@ Presentation and input layer for the HUD. It renders view models, manages menus/
 - `_update_build_options(view_model)`: Updates the three build slots from owned towers, costs, lock state, and active tower id.
 - `_update_speed_controls(game_speed)`: Marks the active speed toggle and dims inactive speed buttons.
 - `update_selected_tower(tower, gold)`: Displays selected tower stats and enables/disables upgrade and sell actions.
-- `show_main_menu(title, can_resume)`: Opens the menu overlay with an appropriate title and resume/restart availability.
+- `show_main_menu(title, can_resume, can_restart)`: Opens the menu overlay with an appropriate title and resume/restart availability.
+- `set_current_seed(seed)`: Updates the menu label that reports the active map seed.
+- `set_seed_input(seed_text)`: Updates the editable menu seed field.
+- `show_loading_progress(progress, message)`: Updates the terrain-generation progress bar and disables menu run buttons while loading.
 - `hide_menu()`: Closes the main menu overlay.
 - `show_reward_choices(choices)`: Opens the reward overlay and fills up to three reward buttons.
 - `hide_reward_choices()`: Closes the reward overlay.
@@ -176,8 +180,9 @@ Presentation and input layer for the HUD. It renders view models, manages menus/
 - `_on_speed_button_pressed(speed)`: Emits requested game speed.
 - `_on_menu_button_pressed()`: Emits menu-open intent.
 - `_on_resume_button_pressed()`: Emits resume intent.
-- `_on_new_game_button_pressed()`: Emits new-game intent.
+- `_on_new_game_button_pressed()`: Emits new-game intent with the current seed input text.
 - `_on_restart_button_pressed()`: Emits restart intent.
+- `_on_seed_text_submitted(_submitted_text)`: Starts New Game when the seed input is submitted.
 - `_on_quit_button_pressed()`: Emits quit intent.
 - `_apply_styles()`: Applies shared panel/button/label theme overrides across HUD controls.
 - `_style_stat_labels()`: Styles top-bar stat labels and values.
@@ -196,7 +201,11 @@ No functions.
 
 Seeded procedural map owner. It creates broad surrounding terrain, a central generated road, route graph, start/exit markers, edge haze, camera, and tower placement queries.
 
-- `_ready()`: Builds the world, creates the navigation graph, and caches the initial enemy path.
+- `_ready()`: Defers generation until the main menu starts or restarts a run.
+- `generate_map(seed, progress_callback)`: Rebuilds the seeded map, reports loading progress, and refreshes the cached enemy path.
+- `_report_generation_progress(progress_callback, progress, message)`: Sends a progress value and status message to the caller when a callback is available.
+- `_clear_generated_world()`: Removes generated map children and clears camera, controller, path, and navigation state before rebuilding.
+- `set_map_seed(seed)`: Stores the seed used by the next generation pass.
 - `get_active_camera()`: Returns the map camera used for placement, hover, and camera control.
 - `set_camera_controls_enabled(is_enabled)`: Enables or disables the map camera controller when present.
 - `get_start_position()`: Returns the 3D start point on generated terrain.
@@ -237,11 +246,11 @@ Seeded procedural map owner. It creates broad surrounding terrain, a central gen
 
 ### `scripts/main.gd`
 
-Game coordinator. It connects map, placement, HUD, clock, run state, enemies, towers, rewards, economy, wave flow, selection, and camera control.
+Game coordinator. It connects map generation, placement, HUD, clock, run state, enemies, towers, rewards, economy, wave flow, selection, and camera control.
 
 - `_ready()`: Restores default game speed, connects scene signals, and shows the initial menu.
 - `_connect_scene_signals()`: Wires map placement signals and HUD intent signals into coordinator handlers.
-- `_show_initial_menu()`: Clears log, shows the initial menu, and refreshes HUD.
+- `_show_initial_menu()`: Clears log, shows the seed-aware initial menu, and refreshes HUD.
 - `_process(delta)`: Advances spawning/wave-complete checks, hover tooltips, and HUD updates while the game is active.
 - `_unhandled_input(event)`: Handles restart, pause/menu, tower selection, and deselection input.
 - `_start_next_wave()`: Starts the next wave from balance data and cancels tower placement.
@@ -263,12 +272,15 @@ Game coordinator. It connects map, placement, HUD, clock, run state, enemies, to
 - `_on_reward_choice_selected(choice_index)`: Applies the chosen reward, clears reward state, unpauses, and updates HUD.
 - `_on_menu_requested()`: Opens the pause menu.
 - `_on_resume_requested()`: Unpauses, hides the menu, and restores camera controls.
-- `_on_new_game_requested()`: Starts and resets a new game.
-- `_on_restart_requested()`: Restarts the current game.
+- `_on_new_game_requested(seed_text)`: Parses the requested seed text and starts a fresh generated map.
+- `_on_restart_requested()`: Restarts the run by regenerating the current map seed.
 - `_on_quit_requested()`: Restores normal time scale and quits the tree.
 - `_on_game_speed_requested(requested_speed)`: Passes requested speed to the game clock.
 - `_game_over()`: Marks defeat, cancels placement, shows defeat menu, and updates HUD.
-- `_restart_game()`: Frees enemies/towers, resets selections, clock, run state, logs, overlays, and HUD.
+- `_start_run(seed, regenerate_map)`: Shows loading UI, optionally regenerates the map for a seed, and starts a clean run.
+- `_on_map_generation_progress(progress, message)`: Forwards map-generation progress updates to the HUD.
+- `_clear_run_entities()`: Frees enemies/towers and clears selection/reward arrays.
+- `_restart_game()`: Resets selections, clock, run state, logs, overlays, and HUD after entities have been cleared.
 - `_update_ui()`: Sends a fresh view model and selected tower data to the HUD, then syncs camera controls.
 - `_make_hud_view_model()`: Builds the HUD snapshot from run state, placement state, and game clock.
 - `_get_tower_positions()`: Collects placed tower positions for placement spacing checks.
@@ -282,6 +294,8 @@ Game coordinator. It connects map, placement, HUD, clock, run state, enemies, to
 - `_update_hovered_tower()`: Shows or hides world tower tooltips based on cursor and placement state.
 - `_sync_camera_controls()`: Enables camera controls only while gameplay can accept them.
 - `_set_game_speed(requested_speed, announce_change)`: Applies game speed through the clock, optionally logs it, and refreshes HUD.
+- `_seed_from_text(seed_text)`: Converts empty, numeric, or text seed input into a non-zero integer map seed.
+- `_make_random_seed()`: Produces a non-zero random seed for fresh maps.
 
 ### `scripts/materials.gd`
 
@@ -414,7 +428,7 @@ Typed wave data consumed by run state and spawning code.
 Headless gameplay smoke test that checks reward drafting, starting a game, speed control, tower placement, selected-tower selling, and two wave completions.
 
 - `_initialize()`: Defers the smoke test until the scene tree is ready.
-- `_run_smoke()`: Orchestrates the full smoke scenario and exits with success on `STABILITY_SMOKE_OK`.
+- `_run_smoke()`: Orchestrates the full smoke scenario, waits for async map generation, verifies wave progress, and exits with success on `STABILITY_SMOKE_OK`.
 - `_verify_reward_choices()`: Ensures reward drafting always returns three non-empty reward ids.
 - `_place_test_towers(main)`: Places a fixed set of towers at known ground points.
 - `_verify_game_speed(main)`: Confirms 4x and 1x speed requests update `Engine.time_scale`.

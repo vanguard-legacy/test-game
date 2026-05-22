@@ -5,6 +5,13 @@ Track meaningful project changes here so future work has a clear history. Use sh
 Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjusted for this active game project.
 Keep dated sections in reverse chronological order. Version headings should point to the latest git tag for each day in the form `YYYY-MM-DD.N`.
 
+## [2026-05-22.4]
+
+- Added a main menu seed field and loading progress display for terrain generation.
+- Split New Game and Restart Run behavior so New Game creates a fresh map seed while Restart Run replays the current seed.
+- Moved map generation behind an explicit `LevelMap.generate_map()` flow that can rebuild terrain, road, navigation, camera, and haze on demand.
+- Tightened the stability smoke so it waits for async map generation and fails if waves do not actually advance.
+
 ## [2026-05-22.3]
 
 - Expanded map generation to use a seeded procedural route and seeded terrain features.
@@ -85,6 +92,7 @@ Keep dated sections in reverse chronological order. Version headings should poin
 - Added multiple enemy archetypes, selectable tower upgrades, and a start/pause/restart menu overlay.
 - Refactored balance data, wave definitions, and run progress out of `main.gd` into focused helper classes.
 
+[2026-05-22.4]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.4
 [2026-05-22.3]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.3
 [2026-05-22.2]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.2
 [2026-05-22.1]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.1

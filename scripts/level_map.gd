@@ -42,10 +42,43 @@ var road_material := Materials.road()
 
 
 func _ready() -> void:
+	pass
+
+
+func generate_map(seed: int, progress_callback: Callable = Callable()) -> void:
+	map_seed = seed
+	_report_generation_progress(progress_callback, 0.02, "Preparing terrain seed.")
 	_configure_generation()
+	await get_tree().process_frame
+	_clear_generated_world()
+	_report_generation_progress(progress_callback, 0.16, "Clearing old map.")
+	await get_tree().process_frame
 	_build_world()
+	_report_generation_progress(progress_callback, 0.74, "Building terrain and road.")
+	await get_tree().process_frame
 	_build_navigation_graph()
 	path_points = find_path(get_start_position(), get_exit_position())
+	_report_generation_progress(progress_callback, 1.0, "Map ready.")
+
+
+func _report_generation_progress(progress_callback: Callable, progress: float, message: String) -> void:
+	if progress_callback.is_valid():
+		progress_callback.call(progress, message)
+
+
+func _clear_generated_world() -> void:
+	for child in get_children():
+		remove_child(child)
+		child.queue_free()
+
+	active_camera = null
+	camera_controller = null
+	navigation_graph.clear()
+	path_points.clear()
+
+
+func set_map_seed(seed: int) -> void:
+	map_seed = seed
 
 
 func get_active_camera() -> Camera3D:

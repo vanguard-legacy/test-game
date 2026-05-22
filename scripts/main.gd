@@ -35,6 +35,8 @@ var selected_tower: Tower = null
 var selected_tower_id: String = GameBalance.TOWER_GWIZARD
 var active_reward_choices: Array[RewardDefinition] = []
 var game_clock: GameClock = GameClock.new()
+var current_map_seed: int = 0
+var is_generating_map: bool = false
 
 
 func _ready() -> void:
@@ -66,8 +68,11 @@ func _connect_scene_signals() -> void:
 
 func _show_initial_menu() -> void:
 	hud.clear_message_log()
-	hud.set_message("Open the menu to start a run.")
-	hud.show_main_menu("G'wizard Defense", false)
+	hud.set_current_seed(current_map_seed)
+	hud.set_seed_input("")
+	hud.show_loading_progress(1.0, "Choose a seed or leave it blank.")
+	hud.set_message("Choose New Game to generate a map.")
+	hud.show_main_menu("G'wizard Defense", false, false)
 	_update_ui()
 
 
@@ -87,7 +92,8 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if run_state.game_over and event.is_action_pressed("ui_accept"):
-		_restart_game()
+		if current_map_seed != 0:
+			await _start_run(current_map_seed, true)
 		return
 
 	if event.is_action_pressed("ui_cancel"):
@@ -317,23 +323,27 @@ func _on_menu_requested() -> void:
 
 
 func _on_resume_requested() -> void:
+	if is_generating_map:
+		return
+
 	get_tree().paused = false
 	hud.hide_menu()
 	_sync_camera_controls()
 
 
-func _on_new_game_requested() -> void:
-	get_tree().paused = false
-	run_state.game_started = true
-	_restart_game()
-	hud.hide_menu()
+func _on_new_game_requested(seed_text: String = "") -> void:
+	if is_generating_map:
+		return
+
+	var next_seed := _seed_from_text(seed_text)
+	await _start_run(next_seed, true)
 
 
 func _on_restart_requested() -> void:
-	get_tree().paused = false
-	run_state.game_started = true
-	_restart_game()
-	hud.hide_menu()
+	if is_generating_map or current_map_seed == 0:
+		return
+
+	await _start_run(current_map_seed, true)
 
 
 func _on_quit_requested() -> void:
@@ -351,11 +361,37 @@ func _game_over() -> void:
 	tower_placement.cancel_placement()
 	hud.hide_tower_tooltip()
 	hud.set_message("Defeat. Press Enter or Space to try again.")
-	hud.show_main_menu("Defeat", false)
+	hud.show_main_menu("Defeat", false, current_map_seed != 0)
 	_update_ui()
 
 
-func _restart_game() -> void:
+func _start_run(seed: int, regenerate_map: bool) -> void:
+	is_generating_map = true
+	get_tree().paused = false
+	hud.hide_tower_tooltip()
+	hud.hide_reward_choices()
+	hud.show_main_menu("Generating Map", false, false)
+	hud.set_current_seed(seed)
+	hud.show_loading_progress(0.0, "Preparing map.")
+	_clear_run_entities()
+
+	if regenerate_map:
+		await level_map.generate_map(seed, Callable(self, "_on_map_generation_progress"))
+		tower_placement.setup(level_map)
+
+	current_map_seed = seed
+	is_generating_map = false
+	_restart_game()
+	hud.set_current_seed(current_map_seed)
+	hud.show_loading_progress(1.0, "Map ready.")
+	hud.hide_menu()
+
+
+func _on_map_generation_progress(progress: float, message: String) -> void:
+	hud.show_loading_progress(progress, message)
+
+
+func _clear_run_entities() -> void:
 	for enemy in enemies:
 		enemy.queue_free()
 
@@ -367,10 +403,15 @@ func _restart_game() -> void:
 	selected_tower = null
 	selected_tower_id = GameBalance.TOWER_GWIZARD
 	active_reward_choices.clear()
+
+
+func _restart_game() -> void:
+	_clear_run_entities()
 	game_clock.reset()
+	run_state.game_started = true
 	run_state.reset(run_state.game_started)
 	hud.clear_message_log()
-	hud.set_message("Build a tower, then start the wave.")
+	hud.set_message("Map seed %d. Build a tower, then start the wave." % current_map_seed)
 	hud.hide_menu()
 	hud.hide_reward_choices()
 	hud.hide_tower_tooltip()
@@ -474,12 +515,12 @@ func _find_tower_near_screen_position(camera: Camera3D, mouse_position: Vector2)
 
 
 func _open_pause_menu() -> void:
-	if not run_state.game_started or run_state.game_over:
+	if is_generating_map or not run_state.game_started or run_state.game_over:
 		return
 
 	get_tree().paused = true
 	hud.hide_tower_tooltip()
-	hud.show_main_menu("Paused", true)
+	hud.show_main_menu("Paused", true, current_map_seed != 0)
 	_sync_camera_controls()
 
 
@@ -519,7 +560,7 @@ func _update_hovered_tower() -> void:
 
 
 func _sync_camera_controls() -> void:
-	var can_control_camera := run_state.game_started and not run_state.game_over and not run_state.reward_pending and not get_tree().paused and active_reward_choices.is_empty()
+	var can_control_camera := run_state.game_started and not is_generating_map and not run_state.game_over and not run_state.reward_pending and not get_tree().paused and active_reward_choices.is_empty()
 	level_map.set_camera_controls_enabled(can_control_camera)
 
 
@@ -532,3 +573,21 @@ func _set_game_speed(requested_speed: float, announce_change: bool = true) -> vo
 
 	if is_node_ready():
 		_update_ui()
+
+
+func _seed_from_text(seed_text: String) -> int:
+	if seed_text.is_empty():
+		return _make_random_seed()
+
+	if seed_text.is_valid_int():
+		var numeric_seed := absi(seed_text.to_int())
+		return numeric_seed if numeric_seed != 0 else _make_random_seed()
+
+	var hashed_seed := absi(seed_text.hash())
+	return hashed_seed if hashed_seed != 0 else _make_random_seed()
+
+
+func _make_random_seed() -> int:
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	return rng.randi_range(1, 2147483647)

@@ -22,7 +22,7 @@ signal sell_tower_requested
 signal reward_choice_selected(choice_index: int)
 signal menu_requested
 signal resume_requested
-signal new_game_requested
+signal new_game_requested(seed_text: String)
 signal restart_requested
 signal quit_requested
 signal game_speed_requested(speed: float)
@@ -81,15 +81,53 @@ var reward_choice_buttons: Array[Button] = []
 var speed_buttons: Array[Button] = []
 var tower_tooltip_source: String = ""
 var command_log: Array[String] = []
+var seed_input: LineEdit
+var current_seed_label: Label
+var loading_label: Label
+var loading_progress: ProgressBar
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_build_menu_seed_controls()
 	_cache_button_groups()
 	_apply_styles()
 	_connect_button_signals()
 	set_build_mode(false)
 	update_selected_tower(null, 0)
+
+
+func _build_menu_seed_controls() -> void:
+	var stack := menu_title.get_parent()
+	current_seed_label = Label.new()
+	current_seed_label.name = "CurrentSeedLabel"
+	current_seed_label.text = "Current seed: none"
+	current_seed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stack.add_child(current_seed_label)
+	stack.move_child(current_seed_label, menu_title.get_index() + 1)
+
+	seed_input = LineEdit.new()
+	seed_input.name = "SeedInput"
+	seed_input.placeholder_text = "Seed: leave blank for a fresh map"
+	seed_input.custom_minimum_size = Vector2(0.0, 42.0)
+	stack.add_child(seed_input)
+	stack.move_child(seed_input, current_seed_label.get_index() + 1)
+
+	loading_label = Label.new()
+	loading_label.name = "LoadingLabel"
+	loading_label.text = "Terrain ready."
+	loading_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stack.add_child(loading_label)
+	stack.move_child(loading_label, seed_input.get_index() + 1)
+
+	loading_progress = ProgressBar.new()
+	loading_progress.name = "LoadingProgress"
+	loading_progress.min_value = 0.0
+	loading_progress.max_value = 100.0
+	loading_progress.value = 0.0
+	loading_progress.custom_minimum_size = Vector2(0.0, 18.0)
+	stack.add_child(loading_progress)
+	stack.move_child(loading_progress, loading_label.get_index() + 1)
 
 
 func _cache_button_groups() -> void:
@@ -119,6 +157,7 @@ func _connect_button_signals() -> void:
 	new_game_button.pressed.connect(_on_new_game_button_pressed)
 	restart_button.pressed.connect(_on_restart_button_pressed)
 	quit_button.pressed.connect(_on_quit_button_pressed)
+	seed_input.text_submitted.connect(_on_seed_text_submitted)
 
 
 func _process(_delta: float) -> void:
@@ -215,11 +254,26 @@ func update_selected_tower(tower: Tower, gold: int) -> void:
 	sell_tower_button.disabled = false
 
 
-func show_main_menu(title: String, can_resume: bool) -> void:
+func show_main_menu(title: String, can_resume: bool, can_restart: bool = false) -> void:
 	menu_title.text = title
 	menu_overlay.visible = true
 	resume_button.disabled = not can_resume
-	restart_button.disabled = not can_resume
+	restart_button.disabled = not can_restart
+
+
+func set_current_seed(seed: int) -> void:
+	current_seed_label.text = "Current seed: %s" % ("none" if seed == 0 else str(seed))
+
+
+func set_seed_input(seed_text: String) -> void:
+	seed_input.text = seed_text
+
+
+func show_loading_progress(progress: float, message: String) -> void:
+	loading_label.text = message
+	loading_progress.value = clampf(progress, 0.0, 1.0) * 100.0
+	new_game_button.disabled = progress < 1.0
+	restart_button.disabled = progress < 1.0 or current_seed_label.text.ends_with("none")
 
 
 func hide_menu() -> void:
@@ -320,11 +374,15 @@ func _on_resume_button_pressed() -> void:
 
 
 func _on_new_game_button_pressed() -> void:
-	new_game_requested.emit()
+	new_game_requested.emit(seed_input.text.strip_edges())
 
 
 func _on_restart_button_pressed() -> void:
 	restart_requested.emit()
+
+
+func _on_seed_text_submitted(_submitted_text: String) -> void:
+	_on_new_game_button_pressed()
 
 
 func _on_quit_button_pressed() -> void:
@@ -364,6 +422,10 @@ func _apply_styles() -> void:
 	message_label.add_theme_font_size_override("font_size", 15)
 	menu_title.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
 	menu_title.add_theme_font_size_override("font_size", 24)
+	current_seed_label.add_theme_color_override("font_color", UiTheme.MUTED_TEXT_COLOR)
+	loading_label.add_theme_color_override("font_color", UiTheme.MUTED_TEXT_COLOR)
+	seed_input.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
+	seed_input.add_theme_color_override("font_placeholder_color", UiTheme.MUTED_TEXT_COLOR)
 	reward_title.add_theme_color_override("font_color", UiTheme.TEXT_COLOR)
 	reward_title.add_theme_font_size_override("font_size", 24)
 	tower_tooltip_title.add_theme_color_override("font_color", UiTheme.VALUE_TEXT_COLOR)
