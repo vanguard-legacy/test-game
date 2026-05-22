@@ -43,6 +43,8 @@ signal auto_start_toggled(is_enabled: bool)
 @onready var speed_1x_button: Button = $Root/Layout/TopBar/Margin/StatsRow/SpeedControls/Speed1xButton
 @onready var speed_2x_button: Button = $Root/Layout/TopBar/Margin/StatsRow/SpeedControls/Speed2xButton
 @onready var speed_4x_button: Button = $Root/Layout/TopBar/Margin/StatsRow/SpeedControls/Speed4xButton
+@onready var speed_8x_button: Button = $Root/Layout/TopBar/Margin/StatsRow/SpeedControls/Speed8xButton
+@onready var speed_16x_button: Button = $Root/Layout/TopBar/Margin/StatsRow/SpeedControls/Speed16xButton
 @onready var auto_start_button: Button = $Root/Layout/TopBar/Margin/StatsRow/AutoStartButton
 @onready var menu_button: Button = $Root/Layout/TopBar/Margin/StatsRow/MenuButton
 @onready var build_title: Label = $Root/Layout/BottomRow/BuildPanel/Margin/Stack/BuildTitle
@@ -135,7 +137,7 @@ func _build_menu_seed_controls() -> void:
 func _cache_button_groups() -> void:
 	tower_slot_buttons = [build_tower_button, build_tower_button_2, build_tower_button_3]
 	reward_choice_buttons = [reward_choice_1_button, reward_choice_2_button, reward_choice_3_button]
-	speed_buttons = [speed_1x_button, speed_2x_button, speed_4x_button]
+	speed_buttons = [speed_1x_button, speed_2x_button, speed_4x_button, speed_8x_button, speed_16x_button]
 
 
 func _connect_button_signals() -> void:
@@ -150,6 +152,8 @@ func _connect_button_signals() -> void:
 	speed_1x_button.pressed.connect(_on_speed_button_pressed.bind(1.0))
 	speed_2x_button.pressed.connect(_on_speed_button_pressed.bind(2.0))
 	speed_4x_button.pressed.connect(_on_speed_button_pressed.bind(4.0))
+	speed_8x_button.pressed.connect(_on_speed_button_pressed.bind(8.0))
+	speed_16x_button.pressed.connect(_on_speed_button_pressed.bind(16.0))
 	auto_start_button.pressed.connect(_on_auto_start_button_pressed)
 	cancel_build_button.pressed.connect(_on_cancel_build_button_pressed)
 	start_wave_button.pressed.connect(_on_start_wave_button_pressed)
@@ -415,7 +419,7 @@ func _apply_styles() -> void:
 	for index in range(speed_buttons.size()):
 		var button := speed_buttons[index]
 		button.toggle_mode = true
-		button.set_meta("speed", [1.0, 2.0, 4.0][index])
+		button.set_meta("speed", [1.0, 2.0, 4.0, 8.0, 16.0][index])
 		_style_button(button)
 
 	auto_start_button.toggle_mode = true

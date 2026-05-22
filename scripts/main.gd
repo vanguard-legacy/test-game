@@ -542,6 +542,9 @@ func _open_pause_menu() -> void:
 func _open_reward_choices() -> void:
 	active_reward_choices = GameBalance.get_reward_choices(run_state.owned_tower_ids, run_state.chosen_reward_ids, run_state.reward_level)
 	if active_reward_choices.is_empty():
+		run_state.exhaust_rewards()
+		hud.hide_reward_choices()
+		hud.set_message("All run rewards have been claimed.")
 		return
 
 	hud.hide_tower_tooltip()

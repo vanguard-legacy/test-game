@@ -51,7 +51,7 @@ Map scene root for procedural terrain, road/path generation, camera setup, and b
 
 ### `scenes/hud.tscn`
 
-Container-based HUD scene. It owns top-bar stats, speed and auto-wave controls, build controls, tower upgrade/sell controls, command log, main menu overlay with seed/loading controls, compact reward panel, and tooltip nodes.
+Container-based HUD scene. It owns top-bar stats, 1x through 16x speed controls, auto-wave controls, build controls, tower upgrade/sell controls, command log, main menu overlay with seed/loading controls, compact reward panel, and tooltip nodes.
 
 ### `scenes/tower.tscn`
 
@@ -120,7 +120,7 @@ Central balance catalogue for lives, gold, towers, enemies, rewards, height bonu
 - `get_tower_cost(tower_id)`: Returns the build cost for a tower id.
 - `get_tower_terrain_bonus(terrain_height)`: Converts terrain height into damage/range modifiers and a readable label.
 - `get_xp_required_for_level(level)`: Returns the XP threshold for a reward level.
-- `get_reward_choices(owned_tower_ids, chosen_reward_ids, reward_level)`: Drafts three reward choices from unlocks, upgrades, and gold fallback rewards.
+- `get_reward_choices(owned_tower_ids, chosen_reward_ids, reward_level)`: Drafts up to three reward choices from remaining tower unlocks and upgrades.
 - `get_enemy_definition(enemy_id)`: Returns a typed enemy definition for the requested enemy id.
 - `get_wave_definition(wave)`: Returns a scripted wave if available, otherwise a scaling wave.
 - `get_tower_upgrade_cost(level)`: Returns the cost to upgrade from the current tower level.
@@ -130,9 +130,8 @@ Central balance catalogue for lives, gold, towers, enemies, rewards, height bonu
 - `_repeat_pattern(pattern, times)`: Repeats an enemy id pattern for compact wave authoring.
 - `_get_upgrade_rewards()`: Defines the non-tower-unlock reward pool.
 - `_make_unlock_reward(tower_id)`: Builds a reward that unlocks a tower type.
-- `_make_gold_reward(reward_level, index)`: Builds a fallback gold reward with a unique id.
 - `_get_height_bonus_label(terrain_height)`: Converts height into a readable terrain-bonus label.
-- `_pick_reward_choices(candidates, reward_level)`: Selects up to three reward choices and fills gaps with gold rewards.
+- `_pick_reward_choices(candidates, reward_level)`: Selects up to three reward choices from available candidates.
 
 ### `scripts/game_clock.gd`
 
@@ -295,7 +294,7 @@ Game coordinator. It connects map generation, placement, HUD, clock, run state, 
 - `_find_tower_at_mouse()`: Picks a tower under the mouse using screen-space then terrain-space checks.
 - `_find_tower_near_screen_position(camera, mouse_position)`: Returns the closest tower projected near the cursor.
 - `_open_pause_menu()`: Pauses and opens the menu when the game can be paused.
-- `_open_reward_choices()`: Drafts reward choices and shows the non-modal reward panel without pausing gameplay.
+- `_open_reward_choices()`: Drafts reward choices, shows the non-modal reward panel without pausing gameplay, or marks rewards exhausted when the finite pool is empty.
 - `_maybe_auto_start_next_wave()`: Starts the next wave automatically when auto-wave is enabled and the board can launch safely.
 - `_apply_tower_modifiers()`: Reapplies run-wide tower modifiers to every valid tower.
 - `_update_hovered_tower()`: Shows or hides world tower tooltips based on cursor and placement state.
@@ -318,7 +317,7 @@ Shared 3D material and shader factory for terrain, roads, tower visuals, enemies
 
 ### `scripts/reward_definition.gd`
 
-Typed reward data for tower unlocks, run modifiers, and gold caches.
+Typed reward data for tower unlocks, run modifiers, and gold reward compatibility.
 
 - `_init(data)`: Copies authored dictionary values into named reward fields.
 
@@ -337,8 +336,9 @@ Pure run-state model with no scene nodes. It owns economy, wave queue, XP/reward
 - `has_pending_spawns()`: Reports whether the spawn queue has unspawned entries.
 - `next_enemy_id()`: Pops and returns the next enemy id from the spawn queue.
 - `incoming_count(active_enemy_count)`: Combines active enemies and queued enemies for HUD display.
-- `add_xp(amount)`: Adds XP and marks reward pending when the next threshold is reached.
+- `add_xp(amount)`: Adds XP and marks reward pending when the next threshold is reached, unless the finite reward pool is exhausted.
 - `complete_reward(reward)`: Applies unlock, modifier, or gold rewards and advances reward level.
+- `exhaust_rewards()`: Clears pending reward state and prevents future XP from opening reward drafts.
 - `can_afford_any_owned_tower()`: Reports whether current gold can buy any unlocked tower.
 
 ### `scripts/terrain_query.gd`
@@ -433,13 +433,13 @@ Typed wave data consumed by run state and spawning code.
 
 ### `tests/stability_smoke.gd`
 
-Headless gameplay smoke test that checks reward drafting, starting a game, speed control, auto-wave toggling, non-modal rewards, tower placement, selected-tower selling, and two wave completions.
+Headless gameplay smoke test that checks finite reward drafting, starting a game, 16x speed control, auto-wave toggling, non-modal rewards, tower placement, selected-tower selling, and two wave completions.
 
 - `_initialize()`: Defers the smoke test until the scene tree is ready.
 - `_run_smoke()`: Orchestrates the full smoke scenario, waits for async map generation, verifies wave progress, and exits with success on `STABILITY_SMOKE_OK`.
-- `_verify_reward_choices()`: Ensures reward drafting always returns three non-empty reward ids.
+- `_verify_reward_choices()`: Ensures fresh reward drafting returns valid rewards and exhausted drafting returns no stipend fallback choices.
 - `_place_test_towers(main)`: Places a fixed set of towers at known ground points.
-- `_verify_game_speed(main)`: Confirms 4x and 1x speed requests update `Engine.time_scale`.
+- `_verify_game_speed(main)`: Confirms 16x and 1x speed requests update `Engine.time_scale`.
 - `_verify_auto_start_toggle(main)`: Confirms auto-wave intent toggles gameplay state on and off.
 - `_verify_reward_overlay_non_modal(main)`: Confirms reward choices open without pausing gameplay.
 - `_verify_sell_tower(main)`: Confirms selecting and selling a non-last tower removes it and refunds gold.

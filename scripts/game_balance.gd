@@ -364,16 +364,6 @@ static func _make_unlock_reward(tower_id: String) -> RewardDefinition:
 	})
 
 
-static func _make_gold_reward(reward_level: int, index: int) -> RewardDefinition:
-	return RewardDefinition.new({
-		"id": "gold_cache_%d_%d" % [reward_level, index],
-		"type": RewardDefinition.TYPE_GOLD,
-		"title": "Royal Stipend",
-		"description": "+75 gold for more building.",
-		"gold": 75,
-	})
-
-
 static func _get_height_bonus_label(terrain_height: float) -> String:
 	if terrain_height >= 0.9:
 		return "High ground advantage"
@@ -392,10 +382,5 @@ static func _pick_reward_choices(candidates: Array[RewardDefinition], reward_lev
 			choices.append(candidates[(start_index + offset) % candidates.size()])
 			if choices.size() >= 3:
 				break
-
-	var gold_index := 0
-	while choices.size() < 3:
-		choices.append(_make_gold_reward(reward_level, gold_index))
-		gold_index += 1
 
 	return choices

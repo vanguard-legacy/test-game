@@ -78,18 +78,25 @@ func _verify_reward_choices() -> void:
 		"haste_runes",
 	]
 
-	for reward_level in range(24):
-		var choices := GameBalance.get_reward_choices(owned_tower_ids, chosen_reward_ids, reward_level)
-		if choices.size() != 3:
-			push_error("Reward choice count was %d at level %d." % [choices.size(), reward_level])
+	var exhausted_choices := GameBalance.get_reward_choices(owned_tower_ids, chosen_reward_ids, 24)
+	if not exhausted_choices.is_empty():
+		push_error("Exhausted rewards should return no stipend fallback choices.")
+		quit(1)
+		return
+
+	owned_tower_ids = [GameBalance.TOWER_GWIZARD]
+	chosen_reward_ids.clear()
+	var choices := GameBalance.get_reward_choices(owned_tower_ids, chosen_reward_ids, 0)
+	if choices.size() != 3:
+		push_error("Fresh reward draft returned %d choices; expected 3." % choices.size())
+		quit(1)
+		return
+
+	for reward in choices:
+		if reward.id.is_empty():
+			push_error("Reward choice had an empty id.")
 			quit(1)
 			return
-
-		for reward in choices:
-			if reward.id.is_empty():
-				push_error("Reward choice had an empty id at level %d." % reward_level)
-				quit(1)
-				return
 
 
 func _place_test_towers(main: Node) -> void:
@@ -125,9 +132,9 @@ func _place_test_towers(main: Node) -> void:
 
 func _verify_game_speed(main: Node) -> void:
 	print("STABILITY_SMOKE_GAME_SPEED")
-	main._on_game_speed_requested(4.0)
-	if not is_equal_approx(Engine.time_scale, 4.0):
-		push_error("Game speed control did not set Engine.time_scale to 4x.")
+	main._on_game_speed_requested(16.0)
+	if not is_equal_approx(Engine.time_scale, 16.0):
+		push_error("Game speed control did not set Engine.time_scale to 16x.")
 		quit(1)
 		return
 

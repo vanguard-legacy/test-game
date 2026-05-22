@@ -20,6 +20,7 @@ var game_over: bool = false
 var game_started: bool = false
 var wave_active: bool = false
 var reward_pending: bool = false
+var rewards_exhausted: bool = false
 var spawn_cooldown: float = 0.0
 var wave_queue: Array[String] = []
 var next_spawn_index: int = 0
@@ -40,6 +41,7 @@ func reset(keep_started: bool = true) -> void:
 	game_over = false
 	wave_active = false
 	reward_pending = false
+	rewards_exhausted = false
 	spawn_cooldown = 0.0
 	wave_queue.clear()
 	next_spawn_index = 0
@@ -81,6 +83,9 @@ func add_xp(amount: int) -> bool:
 		return false
 
 	xp += amount
+	if rewards_exhausted:
+		return false
+
 	if reward_pending:
 		return false
 
@@ -109,6 +114,11 @@ func complete_reward(reward: RewardDefinition) -> void:
 	reward_level += 1
 	xp_to_next = GameBalance.get_xp_required_for_level(reward_level + 1)
 	reward_pending = false
+
+
+func exhaust_rewards() -> void:
+	reward_pending = false
+	rewards_exhausted = true
 
 
 func can_afford_any_owned_tower() -> bool:

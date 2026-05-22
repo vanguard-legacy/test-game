@@ -4,7 +4,7 @@ This file summarizes each day of meaningful project work in short, future-facing
 
 ## 2026-05-23
 
-We changed reward choices from full-screen gameplay interruptions into a compact non-modal HUD panel so the run keeps moving while players decide. We also added an Auto Wave toggle that can start waves automatically when the board is ready, and extended the smoke test to cover the new flow.
+We changed reward choices from full-screen gameplay interruptions into a compact non-modal HUD panel so the run keeps moving while players decide. We also added an Auto Wave toggle, expanded speed controls up to 16x, removed infinite stipend fallback rewards, and extended the smoke test to cover the new flow.
 
 ## 2026-05-22
 
