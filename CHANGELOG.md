@@ -1,120 +1,23 @@
 # Changelog
 
-Track meaningful project changes here so future work has a clear history. Use short, dated entries and keep implementation detail high-level unless a detail affects future development.
+This file summarizes each day of meaningful project work in short, future-facing notes. Keep entries in reverse chronological order, with exactly two sentences per date so the changelog stays readable as the project grows.
 
-Format: based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adjusted for this active game project.
-Keep dated sections in reverse chronological order. Version headings should point to the latest git tag for each day in the form `YYYY-MM-DD.N`.
+## 2026-05-22
 
-## [2026-05-22.7]
+We cleaned up project terminology, added the project reference, tightened validation, and changed the menu/run flow so players can generate seeded maps, restart the same seed, and see loading progress. We also expanded procedural terrain and upgraded the map atmosphere with environment fog, volumetric-style fog banks, shader motion, and real-time rolling fog animation.
 
-- Animated fog banks with slow seeded drift, breathing scale changes, and subtle yaw for spooky rolling atmosphere.
-- Added shader-level fog motion with animated noise drift, soft surface deformation, pulse variation, and richer mist color blending.
-- Kept fog animation running in real time so atmosphere continues during menus and paused moments.
+## 2026-05-19
 
-## [2026-05-22.6]
-
-- Replaced flat ground fog sheets with seeded volumetric-style fog-bank clusters built from overlapping shader puffs.
-- Added a richer fog-bank shader with noisy alpha breakup, soft volume falloff, rim variation, and subtle drift.
-- Enabled volumetric environment fog to make the map atmosphere feel less like isolated transparent geometry.
-
-## [2026-05-22.5]
-
-- Replaced the visible border fog wall planes with environment fog and soft ground mist patches.
-- Added an edge-atmosphere color falloff to terrain and road colors so distant terrain fades naturally.
-- Added a reusable ground-fog shader material with noisy radial alpha instead of rectangular transparent geometry.
-
-## [2026-05-22.4]
-
-- Added a main menu seed field and loading progress display for terrain generation.
-- Split New Game and Restart Run behavior so New Game creates a fresh map seed while Restart Run replays the current seed.
-- Moved map generation behind an explicit `LevelMap.generate_map()` flow that can rebuild terrain, road, navigation, camera, and haze on demand.
-- Tightened the stability smoke so it waits for async map generation and fails if waves do not actually advance.
-
-## [2026-05-22.3]
-
-- Expanded map generation to use a seeded procedural route and seeded terrain features.
-- Split the visual terrain extent from the playable road/build/navigation area so the world has more land around the track.
-- Added distant dark edge haze to reduce obvious skybox exposure without obstructing the tactical camera view.
-- Updated the project reference for the new map generation helpers.
-
-## [2026-05-22.2]
-
-- Fixed camera mouse controls so empty HUD panel and layout space near the command log no longer blocks world interaction.
-- Kept camera input blocked over interactive UI such as buttons, scroll areas, text inputs, sliders, and modal overlays.
-- Updated the project reference for the camera input gating helpers.
-
-## [2026-05-22.1]
-
-- Removed outdated early-build terminology from authored project text and comments.
-- Renamed global GDScript classes from the old project prefix to `Defense*`.
-- Added `REFERENCE.md` as a file and function map for the project.
-- Documented that `REFERENCE.md` should stay current when authored files or functions change.
-- Fixed the Godot shim help text to point at `tools/set-godot.ps1`.
-- Tightened the smoke wrapper so GDScript errors fail validation even if the smoke prints its success marker.
-
-## [2026-05-19]
-
-- Moved development tools into dedicated `tools` directory.
-- Corrected the release workflow so the changelog includes the next tag section before the commit is tagged.
-- Added the missing `2026-05-19.5` changelog section for the previous release.
-- Simplified tagged changelog headings so the date is not repeated outside the tag.
-- Corrected the changelog/tag workflow so agent workflow changes are documented before release tagging.
-- Documented that completed, validated agent work should be committed, pushed, date-tagged, and tag-pushed by default unless the user asks to hold changes locally.
-- Added a Godot command setup script that stores the active executable in `GODOT_EXE`, refreshes the `godot.cmd` shim, and keeps validation independent of versioned install folders.
-- Added procedural terrain and road shader materials with vertex color blending, altitude tinting, grain, road edge darkening, and extra terrain detail.
-- Increased map visual contrast with darker terrain/road palettes, stronger shader shading, and lower sun intensity.
-- Added a selected-tower sell action that removes placed towers and refunds half of their build cost.
-- Improved tower selection with screen-space picking and a visible selected-tower range highlight.
-- Tightened Godot validation so logs are written to the ignored project-local `.godot/codex_validation` folder and the launch command can be inspected without running the engine.
-- Added 1x/2x/4x game speed controls, kept keyboard/edge camera panning stable while time is scaled, and increased enemy counts across scripted and scaling waves.
-- Introduced a small gameplay clock boundary so HUD speed buttons emit intent while the simulation side owns valid speed values and `Engine.time_scale`.
-- Expanded the Godot validation wrapper with recovery-mode project validation, project-local smoke logs, and an optional `-RunSmoke` test pass.
-- Reordered the changelog to follow Keep a Changelog-style reverse chronological sections.
-- Documented date-based version tags in the form `YYYY-MM-DD.N`.
-- Linked changelog release headings to matching Git version tags.
-- Removed the `Unreleased` heading because this game is always in active development.
+We moved development tools into the `tools` directory, fixed the Godot executable setup workflow, improved validation logging, and documented the commit/tag/push release rhythm. We also improved terrain contrast, added shader materials, introduced tower selling and selection, added game-speed controls, increased wave pressure, and clarified changelog/tag expectations.
 
 ## 2026-05-18
 
-- Added terrain-height tower bonuses so high ground increases tower damage and range while low ground applies a small penalty.
-- Added placement hover tooltips that preview the terrain bonus before a tower is placed.
-- Expanded the game map with a larger terrain footprint, a longer winding route, more varied elevation, and changing road widths.
+We made terrain height mechanically meaningful by adding tower bonuses for high ground and placement tooltips that preview the terrain effect. We also expanded the map footprint with a longer winding route, more elevation variety, and changing road widths.
 
 ## 2026-05-17
 
-- Added strategy-style camera controls for edge/keyboard panning, mouse drag panning, mouse rotation, and zoom.
-- Added XP progression with three-choice reward drafts that can unlock tower types or apply global tower buffs.
-- Added three fixed build slots and new tower archetypes for long-range, slowing, and splash damage play.
-- Inverted vertical mouse camera tilt, disabled camera controls during overlays, and added cursor-following tower info tooltips.
-- Reused tower beam effects instead of allocating shot effects every attack, tightened validation so GDScript warnings fail the pass, and added a short combat smoke script.
-- Fixed reward choice selection so exhausted or even-sized reward pools cannot hang the game.
-- Changed middle-mouse camera panning to anchor on the terrain point under the cursor instead of using fixed pixel-speed movement.
-- Locked middle-mouse camera panning to a horizontal grab plane so terrain height changes do not cause accidental zoom-like motion.
-- Refactored gameplay, HUD, reward, terrain, and placement data flow around typed definitions, view models, and query results instead of long parameter lists and scattered dictionaries.
-- Added onboarding comments to core gameplay scripts and documented the current architecture boundaries for future contributors and agents.
-- Changed the command message panel into a stable scrollable event log so players can review run messages.
-- Prevented camera mouse controls from responding while the cursor is over HUD controls, including the command log scrollbar.
+We added strategy-style camera controls, tower unlock rewards, three build slots, multiple tower archetypes, tower hover tooltips, and a scrollable command log. We also stabilized reward drafting, improved middle-mouse panning, added combat smoke validation, and refactored gameplay/HUD/reward/terrain/placement data flow into cleaner typed structures.
 
 ## 2026-05-16
 
-- Added Codex project guidance in `AGENTS.md`.
-- Added the game design brief in `DESIGN.md`.
-- Created a simple Godot validation script at `scripts/validate-godot.ps1`.
-- Built the first playable version with waves, lives, score, gold, enemies, towers, and player tower placement.
-- Split the game into focused Godot scenes for the map, enemies, towers, HUD, and round coordination.
-- Added first-pass generated scene assets for the Gobbelin enemy and G'wizard tower.
-- Added SVG UI icons and a container-based HUD with shared UI styling.
-- Replaced box terrain with procedural terrain, a ramped road, terrain-aware tower placement, and A* enemy routing.
-- Verified project validation and a brief headless scene run with Godot 4.6.2.
-- Stabilized HUD panel sizing so build controls do not resize the UI when entering or leaving tower placement mode.
-- Added multiple enemy archetypes, selectable tower upgrades, and a start/pause/restart menu overlay.
-- Refactored balance data, wave definitions, and run progress out of `main.gd` into focused helper classes.
-
-[2026-05-22.7]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.7
-[2026-05-22.6]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.6
-[2026-05-22.5]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.5
-[2026-05-22.4]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.4
-[2026-05-22.3]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.3
-[2026-05-22.2]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.2
-[2026-05-22.1]: https://github.com/vanguard-legacy/test-game/tree/2026-05-22.1
-[2026-05-19]: https://github.com/vanguard-legacy/test-game/tree/2026-05-19.6
+We created the initial Godot tower-defense foundation with the design brief, Codex guidance, validation script, core scenes, waves, lives, score, gold, enemies, towers, and player placement. We then split the early game into focused scenes/scripts, added first-pass generated visuals and UI icons, replaced test terrain with procedural terrain and A* pathing, stabilized HUD sizing, and introduced the first menu, upgrades, and balance helpers.

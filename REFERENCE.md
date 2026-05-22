@@ -17,11 +17,11 @@ This file is the working map for the game codebase. It documents the purpose of 
 
 ### `AGENTS.md`
 
-Project instructions for Codex and future agents. It defines Godot development rules, validation commands, changelog/version-tag expectations, and workflow conventions.
+Project instructions for Codex and future agents. It defines Godot development rules, validation commands, daily changelog summary expectations, version-tag expectations, and workflow conventions.
 
 ### `CHANGELOG.md`
 
-Human-readable change history. Sections are kept newest first and linked to date-based Git tags when a release tag exists.
+Human-readable change history. Sections are kept newest first as exactly two-sentence summaries for each day of meaningful project work.
 
 ### `DESIGN.md`
 
