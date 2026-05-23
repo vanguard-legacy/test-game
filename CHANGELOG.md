@@ -4,7 +4,7 @@ This file summarizes each day of meaningful project work in short, future-facing
 
 ## 2026-05-23
 
-We changed reward choices from full-screen gameplay interruptions into a compact non-modal HUD panel so the run keeps moving while players decide, then added enemy-facing movement and delayed-impact arcing tower projectiles with varied shot colors. We also added an Auto Wave toggle, expanded speed controls up to 32x, removed infinite stipend fallback rewards, added spawn-wave previews plus enemy health/damage feedback, and extended the smoke test to cover the new flow.
+We changed reward choices from full-screen gameplay interruptions into a compact non-modal HUD panel so the run keeps moving while players decide, then added enemy-facing movement and delayed-impact arcing tower projectiles with varied shot colors. We also added an Auto Wave toggle, expanded speed controls up to 32x, removed infinite stipend fallback rewards, added spawn-wave previews plus enemy health/damage feedback, and extended the smoke test to cover scaled enemy facing.
 
 ## 2026-05-22
 

@@ -165,8 +165,10 @@ func _face_direction(direction: Vector3, delta: float) -> void:
 	if flat_direction.length_squared() < 0.001:
 		return
 
-	var target_basis := Basis.looking_at(flat_direction.normalized(), Vector3.UP)
-	basis = basis.slerp(target_basis, clampf(delta * TURN_SPEED, 0.0, 1.0)).orthonormalized()
+	# Yaw interpolation preserves the enemy's visual scale; basis slerp requires
+	# a normalized basis and scaled enemy archetypes deliberately use node scale.
+	var target_yaw := atan2(-flat_direction.x, -flat_direction.z)
+	rotation.y = lerp_angle(rotation.y, target_yaw, clampf(delta * TURN_SPEED, 0.0, 1.0))
 
 
 func _update_slow(delta: float) -> void:

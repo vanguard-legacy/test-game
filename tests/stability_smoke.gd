@@ -33,6 +33,7 @@ func _run_smoke() -> void:
 	_verify_game_speed(main)
 	_verify_auto_start_toggle(main)
 	_verify_spawn_tooltip(main)
+	_verify_scaled_enemy_facing(main)
 	_verify_reward_overlay_non_modal(main)
 	_place_test_towers(main)
 	_verify_sell_tower(main)
@@ -167,6 +168,20 @@ func _verify_spawn_tooltip(main: Node) -> void:
 	main.run_state.wave_active = false
 	main.run_state.wave_queue.clear()
 	main.run_state.next_spawn_index = 0
+
+
+func _verify_scaled_enemy_facing(main: Node) -> void:
+	print("STABILITY_SMOKE_SCALED_ENEMY_FACING")
+	var enemy = main.enemy_scene.instantiate()
+	main.enemy_container.add_child(enemy)
+	enemy.setup(main.level_map.get_enemy_path(), 5, GameBalance.get_enemy_definition(GameBalance.ENEMY_GNOGRE))
+	enemy._process(SIMULATION_STEP)
+	if not is_equal_approx(enemy.scale.x, GameBalance.get_enemy_definition(GameBalance.ENEMY_GNOGRE).visual_scale):
+		push_error("Scaled enemy facing changed the enemy visual scale.")
+		quit(1)
+		return
+
+	enemy.queue_free()
 
 
 func _verify_auto_start_toggle(main: Node) -> void:

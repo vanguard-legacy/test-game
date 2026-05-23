@@ -104,7 +104,7 @@ Runtime enemy actor. It follows map paths while turning to face movement directi
 - `_make_bar_mesh(width, height)`: Creates a quad mesh for one health bar layer.
 - `_update_health_bar()`: Faces the health bar toward the active camera and scales the fill to current health.
 - `_spawn_damage_number(amount)`: Creates a floating damage label for a hit.
-- `_face_direction(direction, delta)`: Rotates the enemy toward its current horizontal movement direction.
+- `_face_direction(direction, delta)`: Rotates the enemy toward its current horizontal movement direction without disturbing archetype scale.
 - `_update_slow(delta)`: Counts down slow duration and restores normal speed when it expires.
 
 ### `scripts/damage_number.gd`
@@ -463,7 +463,7 @@ Typed wave data consumed by run state and spawning code.
 
 ### `tests/stability_smoke.gd`
 
-Headless gameplay smoke test that checks finite reward drafting, starting a game, 32x speed control, spawn tooltip text, auto-wave toggling, non-modal rewards, tower placement, selected-tower selling, and two wave completions.
+Headless gameplay smoke test that checks finite reward drafting, starting a game, 32x speed control, spawn tooltip text, scaled enemy facing, auto-wave toggling, non-modal rewards, tower placement, selected-tower selling, and two wave completions.
 
 - `_initialize()`: Defers the smoke test until the scene tree is ready.
 - `_run_smoke()`: Orchestrates the full smoke scenario, waits for async map generation, verifies wave progress, and exits with success on `STABILITY_SMOKE_OK`.
@@ -471,6 +471,7 @@ Headless gameplay smoke test that checks finite reward drafting, starting a game
 - `_place_test_towers(main)`: Places a fixed set of towers at known ground points.
 - `_verify_game_speed(main)`: Confirms 32x and 1x speed requests update `Engine.time_scale`.
 - `_verify_spawn_tooltip(main)`: Confirms spawn tooltip text covers next-wave preview and active-wave remaining enemies.
+- `_verify_scaled_enemy_facing(main)`: Confirms large scaled enemies can turn without losing their archetype scale.
 - `_verify_auto_start_toggle(main)`: Confirms auto-wave intent toggles gameplay state on and off.
 - `_verify_reward_overlay_non_modal(main)`: Confirms reward choices open without pausing gameplay.
 - `_verify_sell_tower(main)`: Confirms selecting and selling a non-last tower removes it and refunds gold.
