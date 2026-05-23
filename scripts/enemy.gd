@@ -14,6 +14,7 @@ const Materials := preload("res://scripts/materials.gd")
 const BASE_SPEED: float = 1.75
 const HEALTH_BAR_WIDTH: float = 0.76
 const HEALTH_BAR_Y: float = 1.14
+const TURN_SPEED: float = 10.0
 
 var path_points: Array[Vector3] = []
 var target_index: int = 1
@@ -56,7 +57,9 @@ func _process(delta: float) -> void:
 			is_finished = true
 			reached_exit.emit(self)
 	else:
-		global_position += to_target.normalized() * step
+		var walk_direction := to_target.normalized()
+		_face_direction(walk_direction, delta)
+		global_position += walk_direction * step
 
 
 func setup(points: Array[Vector3], wave: int, definition: EnemyDefinition) -> void:
@@ -77,6 +80,8 @@ func setup(points: Array[Vector3], wave: int, definition: EnemyDefinition) -> vo
 	_apply_enemy_visuals(definition)
 	_build_health_bar()
 	_update_health_bar()
+	if path_points.size() > 1:
+		_face_direction((path_points[1] - path_points[0]).normalized(), 1.0)
 
 
 func take_damage(amount: float) -> void:
@@ -153,6 +158,15 @@ func _spawn_damage_number(amount: float) -> void:
 	var damage_number := DamageNumber.new()
 	add_child(damage_number)
 	damage_number.setup(amount, Color(1.0, 0.72, 0.28))
+
+
+func _face_direction(direction: Vector3, delta: float) -> void:
+	var flat_direction := Vector3(direction.x, 0.0, direction.z)
+	if flat_direction.length_squared() < 0.001:
+		return
+
+	var target_basis := Basis.looking_at(flat_direction.normalized(), Vector3.UP)
+	basis = basis.slerp(target_basis, clampf(delta * TURN_SPEED, 0.0, 1.0)).orthonormalized()
 
 
 func _update_slow(delta: float) -> void:

@@ -93,7 +93,7 @@ RTS-style camera controller for keyboard/edge panning, middle-mouse terrain-anch
 
 ### `scripts/enemy.gd`
 
-Runtime enemy actor. It follows map paths, receives damage and slow effects, shows a health bar and damage numbers, and emits lifecycle signals when defeated or when it reaches the exit.
+Runtime enemy actor. It follows map paths while turning to face movement direction, receives damage and slow effects, shows a health bar and damage numbers, and emits lifecycle signals when defeated or when it reaches the exit.
 
 - `_process(delta)`: Advances the enemy along its path and emits `reached_exit` when it finishes.
 - `setup(points, wave, definition)`: Applies path, wave-scaled stats, rewards, initial position, and visuals from an enemy definition.
@@ -104,6 +104,7 @@ Runtime enemy actor. It follows map paths, receives damage and slow effects, sho
 - `_make_bar_mesh(width, height)`: Creates a quad mesh for one health bar layer.
 - `_update_health_bar()`: Faces the health bar toward the active camera and scales the fill to current health.
 - `_spawn_damage_number(amount)`: Creates a floating damage label for a hit.
+- `_face_direction(direction, delta)`: Rotates the enemy toward its current horizontal movement direction.
 - `_update_slow(delta)`: Counts down slow duration and restores normal speed when it expires.
 
 ### `scripts/damage_number.gd`
@@ -372,7 +373,7 @@ Typed UI payload for tooltip title/body pairs.
 
 ### `scripts/tower.gd`
 
-Runtime tower actor. It handles targeting, attack effects, upgrades, terrain/global modifiers, selection visuals, selling value, and hover text.
+Runtime tower actor. It handles targeting, arcing projectile attack visuals, attack effects, upgrades, terrain/global modifiers, selection visuals, selling value, and hover text.
 
 - `_process(delta)`: Updates beam visibility, counts down attack cooldown, finds targets, attacks, and shows beams.
 - `setup(new_tower_id, modifiers)`: Applies tower identity, cost, global modifiers, and definition data.
@@ -395,7 +396,19 @@ Runtime tower actor. It handles targeting, attack effects, upgrades, terrain/glo
 - `_recalculate_stats()`: Combines base stats, level bonuses, global modifiers, and terrain bonuses.
 - `_update_upgrade_visuals()`: Scales the focus crystal and tower range mesh to current level/range.
 - `_show_beam(from_position, to_position)`: Draws and shows a short-lived attack beam.
+- `_show_projectile(from_position, to_position)`: Spawns a visual projectile that travels from tower to target on a parabolic arc.
 - `_update_beam(delta)`: Hides the attack beam after its display timer expires.
+
+### `scripts/tower_projectile.gd`
+
+Lightweight visual-only projectile for tower attacks. It draws a small glowing shot along a parabolic path with a short trail, then frees itself.
+
+- `setup(new_start_position, new_end_position, new_color)`: Stores flight endpoints/color, builds visuals, and positions the shot at launch.
+- `_process(delta)`: Advances flight progress and frees the projectile at impact time.
+- `_build_visuals()`: Creates the projectile sphere and trail mesh.
+- `_update_visuals(progress)`: Moves and orients the projectile along the arc and refreshes its trail.
+- `_update_trail(progress)`: Rebuilds the trailing line behind the projectile.
+- `_arc_position(progress)`: Calculates the projectile position on a gravity-like parabolic arc.
 
 ### `scripts/tower_definition.gd`
 

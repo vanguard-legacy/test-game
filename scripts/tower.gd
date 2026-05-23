@@ -7,6 +7,7 @@ const TowerModifiers := preload("res://scripts/tower_modifiers.gd")
 const TowerTerrainBonus := preload("res://scripts/tower_terrain_bonus.gd")
 const Enemy := preload("res://scripts/enemy.gd")
 const Materials := preload("res://scripts/materials.gd")
+const TowerProjectile := preload("res://scripts/tower_projectile.gd")
 
 # Tower combat actor. Definitions provide base identity and visuals; local level
 # and run-wide modifiers combine into the live combat stats recalculated here.
@@ -55,8 +56,10 @@ func _process(delta: float) -> void:
 		return
 
 	var beam_end := target.global_position + Vector3(0.0, 0.35, 0.0)
+	var attack_origin := global_position + Vector3(0.0, 1.22, 0.0)
 	_attack(target)
-	_show_beam(global_position + Vector3(0.0, 1.0, 0.0), beam_end)
+	_show_projectile(attack_origin, beam_end)
+	_show_beam(attack_origin, beam_end)
 	cooldown = fire_rate
 
 
@@ -222,6 +225,16 @@ func _show_beam(from_position: Vector3, to_position: Vector3) -> void:
 	beam.mesh = beam_mesh
 	beam.visible = true
 	beam_visible_timer = 0.08
+
+
+func _show_projectile(from_position: Vector3, to_position: Vector3) -> void:
+	var projectile := TowerProjectile.new()
+	var projectile_parent := get_tree().current_scene
+	if projectile_parent == null:
+		projectile_parent = get_parent()
+
+	projectile_parent.add_child(projectile)
+	projectile.setup(from_position, to_position, beam_color)
 
 
 func _update_beam(delta: float) -> void:
