@@ -32,8 +32,7 @@ var splash_radius: float = 0.0
 var global_modifiers: TowerModifiers = GameBalance.get_default_tower_modifiers()
 var terrain_bonus: TowerTerrainBonus = GameBalance.get_tower_terrain_bonus(0.0)
 var is_selected: bool = false
-var beam_visible_timer: float = 0.0
-var beam_mesh := ImmediateMesh.new()
+var projectile_rng := RandomNumberGenerator.new()
 var range_material := Materials.transparent(Color(0.55, 0.80, 1.0, 0.12))
 var selected_range_material := Materials.transparent(Color(1.0, 0.84, 0.28, 0.28))
 
@@ -45,8 +44,6 @@ var selected_range_material := Materials.transparent(Color(1.0, 0.84, 0.28, 0.28
 
 
 func _process(delta: float) -> void:
-	_update_beam(delta)
-
 	cooldown -= delta
 	if cooldown > 0.0:
 		return
@@ -57,9 +54,7 @@ func _process(delta: float) -> void:
 
 	var beam_end := target.global_position + Vector3(0.0, 0.35, 0.0)
 	var attack_origin := global_position + Vector3(0.0, 1.22, 0.0)
-	_attack(target)
-	_show_projectile(attack_origin, beam_end)
-	_show_beam(attack_origin, beam_end)
+	_show_projectile(attack_origin, beam_end, target)
 	cooldown = fire_rate
 
 
@@ -148,8 +143,10 @@ func get_hover_description() -> String:
 
 
 func _ready() -> void:
+	projectile_rng.randomize()
 	tower_range.material_override = range_material
 	tower_range.visible = false
+	beam.visible = false
 	_apply_tower_definition(GameBalance.get_tower_definition(tower_id))
 	_update_upgrade_visuals()
 
@@ -216,31 +213,32 @@ func _update_upgrade_visuals() -> void:
 		mesh.bottom_radius = attack_range
 
 
-func _show_beam(from_position: Vector3, to_position: Vector3) -> void:
-	beam_mesh.clear_surfaces()
-	beam_mesh.surface_begin(Mesh.PRIMITIVE_LINES)
-	beam_mesh.surface_add_vertex(to_local(from_position))
-	beam_mesh.surface_add_vertex(to_local(to_position))
-	beam_mesh.surface_end()
-	beam.mesh = beam_mesh
-	beam.visible = true
-	beam_visible_timer = 0.08
-
-
-func _show_projectile(from_position: Vector3, to_position: Vector3) -> void:
+func _show_projectile(from_position: Vector3, to_position: Vector3, target: Enemy) -> void:
 	var projectile := TowerProjectile.new()
 	var projectile_parent := get_tree().current_scene
 	if projectile_parent == null:
 		projectile_parent = get_parent()
 
 	projectile_parent.add_child(projectile)
-	projectile.setup(from_position, to_position, beam_color)
+	projectile.impact.connect(_on_projectile_impact.bind(target))
+	projectile.setup(from_position, to_position, _get_projectile_color())
 
 
-func _update_beam(delta: float) -> void:
-	if beam_visible_timer <= 0.0:
+func _on_projectile_impact(target: Variant) -> void:
+	if not is_instance_valid(target):
 		return
 
-	beam_visible_timer -= delta
-	if beam_visible_timer <= 0.0:
-		beam.visible = false
+	var enemy := target as Enemy
+	if enemy == null:
+		return
+
+	_attack(enemy)
+
+
+func _get_projectile_color() -> Color:
+	var hue_shift := projectile_rng.randf_range(-0.08, 0.08)
+	var saturation := projectile_rng.randf_range(0.72, 1.0)
+	var value := projectile_rng.randf_range(0.92, 1.18)
+	var color := Color.from_hsv(fposmod(beam_color.h + hue_shift, 1.0), saturation, value)
+	color.a = 1.0
+	return color

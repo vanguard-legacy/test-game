@@ -3,6 +3,8 @@ class_name DefenseTowerProjectile
 
 const Materials := preload("res://scripts/materials.gd")
 
+signal impact
+
 const ARC_HEIGHT: float = 1.85
 const LIFETIME: float = 0.34
 const TRAIL_POINTS: int = 10
@@ -10,6 +12,7 @@ const TRAIL_POINTS: int = 10
 var start_position: Vector3 = Vector3.ZERO
 var end_position: Vector3 = Vector3.ZERO
 var age: float = 0.0
+var has_impacted: bool = false
 var projectile_color: Color = Color.WHITE
 var projectile_mesh: MeshInstance3D
 var trail_mesh: MeshInstance3D
@@ -26,10 +29,15 @@ func setup(new_start_position: Vector3, new_end_position: Vector3, new_color: Co
 
 
 func _process(delta: float) -> void:
+	if has_impacted:
+		return
+
 	age += delta
 	var progress := clampf(age / LIFETIME, 0.0, 1.0)
 	_update_visuals(progress)
 	if progress >= 1.0:
+		has_impacted = true
+		impact.emit()
 		queue_free()
 
 

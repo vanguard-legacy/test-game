@@ -373,7 +373,7 @@ Typed UI payload for tooltip title/body pairs.
 
 ### `scripts/tower.gd`
 
-Runtime tower actor. It handles targeting, arcing projectile attack visuals, attack effects, upgrades, terrain/global modifiers, selection visuals, selling value, and hover text.
+Runtime tower actor. It handles targeting, delayed-impact arcing projectile attacks, upgrades, terrain/global modifiers, selection visuals, selling value, and hover text.
 
 - `_process(delta)`: Updates beam visibility, counts down attack cooldown, finds targets, attacks, and shows beams.
 - `setup(new_tower_id, modifiers)`: Applies tower identity, cost, global modifiers, and definition data.
@@ -390,21 +390,21 @@ Runtime tower actor. It handles targeting, arcing projectile attack visuals, att
 - `get_sell_value()`: Returns half of the tower build cost.
 - `get_hover_description()`: Returns multi-line combat, terrain, upgrade, and sell tooltip text.
 - `_ready()`: Initializes range material, applies current tower definition, and refreshes visuals.
-- `_attack(target)`: Applies bolt, frost, or splash attack behavior to the target and nearby enemies.
+- `_attack(target)`: Applies bolt, frost, or splash attack behavior after a projectile impacts.
 - `_get_effect_summary()`: Returns readable text for the tower effect.
 - `_apply_tower_definition(definition)`: Copies definition stats/visual colors and refreshes live stats.
 - `_recalculate_stats()`: Combines base stats, level bonuses, global modifiers, and terrain bonuses.
 - `_update_upgrade_visuals()`: Scales the focus crystal and tower range mesh to current level/range.
-- `_show_beam(from_position, to_position)`: Draws and shows a short-lived attack beam.
-- `_show_projectile(from_position, to_position)`: Spawns a visual projectile that travels from tower to target on a parabolic arc.
-- `_update_beam(delta)`: Hides the attack beam after its display timer expires.
+- `_show_projectile(from_position, to_position, target)`: Spawns a visual projectile that travels from tower to target on a parabolic arc.
+- `_on_projectile_impact(target)`: Applies delayed damage when the projectile animation finishes, if the target is still valid.
+- `_get_projectile_color()`: Chooses a small random color variation from the tower's base shot color.
 
 ### `scripts/tower_projectile.gd`
 
-Lightweight visual-only projectile for tower attacks. It draws a small glowing shot along a parabolic path with a short trail, then frees itself.
+Lightweight projectile animation for tower attacks. It draws a small glowing shot along a parabolic path with a short trail, emits `impact` at the end of its flight, then frees itself.
 
 - `setup(new_start_position, new_end_position, new_color)`: Stores flight endpoints/color, builds visuals, and positions the shot at launch.
-- `_process(delta)`: Advances flight progress and frees the projectile at impact time.
+- `_process(delta)`: Advances flight progress, emits impact, and frees the projectile at impact time.
 - `_build_visuals()`: Creates the projectile sphere and trail mesh.
 - `_update_visuals(progress)`: Moves and orients the projectile along the arc and refreshes its trail.
 - `_update_trail(progress)`: Rebuilds the trailing line behind the projectile.
@@ -474,7 +474,7 @@ Headless gameplay smoke test that checks finite reward drafting, starting a game
 - `_verify_auto_start_toggle(main)`: Confirms auto-wave intent toggles gameplay state on and off.
 - `_verify_reward_overlay_non_modal(main)`: Confirms reward choices open without pausing gameplay.
 - `_verify_sell_tower(main)`: Confirms selecting and selling a non-last tower removes it and refunds gold.
-- `_run_wave_until_complete(main)`: Manually steps main, towers, and enemies until a wave ends, reward appears, defeat occurs, or timeout fails the test.
+- `_run_wave_until_complete(main)`: Manually steps main, towers, enemies, and delayed projectiles until a wave ends, reward appears, defeat occurs, or timeout fails the test.
 
 ### `tests/stability_smoke.gd.uid`
 

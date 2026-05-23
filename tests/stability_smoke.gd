@@ -2,6 +2,7 @@ extends SceneTree
 
 const GameBalance := preload("res://scripts/game_balance.gd")
 const Tower := preload("res://scripts/tower.gd")
+const TowerProjectile := preload("res://scripts/tower_projectile.gd")
 const MAIN_SCENE: PackedScene = preload("res://scenes/main.tscn")
 const MAX_STEPS_PER_WAVE: int = 2200
 const SIMULATION_STEP: float = 0.1
@@ -238,6 +239,10 @@ func _run_wave_until_complete(main: Node) -> void:
 		for enemy in main.enemies.duplicate():
 			if is_instance_valid(enemy):
 				enemy._process(SIMULATION_STEP)
+
+		for projectile in main.tower_container.get_children():
+			if projectile is TowerProjectile:
+				projectile._process(SIMULATION_STEP)
 
 		if main.active_reward_choices.size() > 0:
 			return
